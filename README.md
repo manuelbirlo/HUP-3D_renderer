@@ -1,57 +1,44 @@
-# Learning Joint Reconstruction of Hands and Manipulated Objects - Demo, Training Code and Models
+# Towards Markerless Surgical Tool and Hand Pose Estimation: Synthetic Grasp Rendering
 
-Yana Hasson, Gül Varol, Dimitris Tzionas, Igor Kalevatykh, Michael J. Black,  Ivan Laptev, Cordelia Schmid, CVPR 2019
+- [Project page](http://medicalaugmentedreality.org/handobject.html)
+<!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
 
-This code allows to **generate synthetic images** of **hands holding objects** as in the [ObMan](https://hassony2.github.io/obman) dataset.
+This grasp renderer is based on the [Obman dataset generation pipeline](https://github.com/hassony2/obman_render).
+The synthetic grasps needed for this renderer can be generated with the [Grasp Generator](https://github.com/jonashein/grasp_generator).
 
-In addition, hands-only images can also be generated, with hand-poses sampled randomly from the [MANO](http://mano.is.tue.mpg.de) hand pose space.
+Our synthetic dataset is available on the [project page](http://medicalaugmentedreality.org/handobject.html).
 
-Examples of rendered images:
+## Table of Content
 
-| Hands+Objects | Hands |
-|---------------|-------|
-| ![handobject](assets/readme/images/handobjects.jpg) | ![hand](assets/readme/images/hand.jpg) |
+- [Setup](#setup)
+- [Demo](#demo)
+- [Render grasps](#render-grasps)
+- [Citations](#citations)
 
-Rendering generates:
-- rgb images
-- 3D ground truth for the hand and objects
-- depth maps
-- segmentation maps
+## Setup
 
-For additional information about the project, see:
+### Download and install code
 
-- [Project page](https://hassony2.github.io/obman)
-- Code
-  - [Robotic grasps generation using MANO](https://github.com/ikalevatykh/mano_grasp)
-  - [Dataset repository](https://github.com/hassony2/obman)
-  - [Training, evaluation and demo code](https://github.com/hassony2/obman_train)
-
-
-
-# Installation
-
-## Setup blender
-
-- Download [Blender 2.78c](https://download.blender.org/release/Blender2.78/) (`wget https://download.blender.org/release/Blender2.78/blender-2.78c-linux-glibc219-x86_64.tar.bz2` for instance)
-- untar `tar -xvf blender-2.78c-linux-glibc219-x86_64.tar.bz2`
-- Download getpip.py: `wget https://bootstrap.pypa.io/get-pip.py`
-- Try `blender-2.78c-linux-glibc219-x86_64/2.78/python/bin/python3.5m get-pip.py`
-  - If this fails, try:
-    - Install pip `path/to/blender-2.78c-linux-glibc219-x86_64/2.78/python/bin/python3.5m path/to/blender-2.78c-linux-glibc219-x86_64/2.78/python/lib/python3.5/ensurepip`
-    - Try to update pip `path/to/blender-2.78c-linux-gliblender-2.78c-linux-glibc219-x86_64/2.78/python/bin/pip3 install --upgrade pip`
-- Install dependencies
-  - `path/to/blender-2.78c-linux-glibc219-x86_64/2.78/python/bin/pip install -r requirements.txt`
-
-## Clone repository
-
-```
-git clone https://github.com/hassony2/obman_render
-cd obman_render
+```sh
+git clone https://github.com/jonashein/grasp_renderer.git
+cd grasp_renderer
 ```
 
-## Download data dependencies
+### Download and install prerequisites
 
-### Download hand and object pickle data-structures
+#### [Blender 2.82a](https://download.blender.org/release/Blender2.82a/) 
+Download [Blender 2.82a](https://download.blender.org/release/Blender2.82a/):
+```sh
+wget https://download.blender.org/release/Blender2.82/blender-2.82a-linux64.tar.xz
+tar -xvf blender-2.82a-linux64.tar.xz
+```
+
+Install dependencies using pip:
+```sh
+wget https://bootstrap.pypa.io/get-pip.py
+blender-2.82a-linux64/2.82/python/bin/python3.7m get-pip.py
+blender-2.78c-linux-glibc219-x86_64/2.78/python/bin/pip install -r requirements.txt
+```
 
 #### Download [SURREAL](https://www.di.ens.fr/willow/research/surreal/data/) assets
 
@@ -59,13 +46,45 @@ cd obman_render
 - Create an account, and receive an email with a username and password for data download
 - Download SURREAL data dependencies using the following commands
 
-```
-cd download
-sh download_smpl_data.sh ../assets username password
+```sh
+cd assets/SURREAL
+sh download_smpl_data.sh ../ username password
 cd ..
 ```
 
-#### Download MANO model
+#### Download [SMPL](http://smpl.is.tue.mpg.de/) model
+
+- Go to [SMPL website](http://smpl.is.tue.mpg.de/)
+- Create an account by clicking *Sign Up* and provide your information
+- Download and unzip `SMPL for Python users`, copy the `models` folder to `assets/models`. Note that all code and data from this download falls under the [SMPL license](http://smpl.is.tue.mpg.de/license_body).
+
+#### Download body+hand textures and grasp information
+
+- Request data on the [ObMan webpage](https://www.di.ens.fr/willow/research/obman/data/). 
+  You should receive a link that will allow you to download `bodywithands.zip`.
+- Download texture zips
+- Unzip texture zip
+
+```sh
+cd assets/textures
+mv path/to/downloaded/bodywithands.zip .
+unzip bodywithands.zip
+cd ../../
+```
+
+- Your structure should look like this:
+
+```
+grasp_renderer/
+  assets/
+    models/
+      SMPLH_female.pkl
+      basicModel_f_lbs_10_207_0_v1.0.2.fbx'
+      basicModel_m_lbs_10_207_0_v1.0.2.fbx'
+      ...
+```
+
+#### Download [MANO](http://mano.is.tue.mpg.de/) model
 
 - Go to [MANO website](http://mano.is.tue.mpg.de/)
 - Create an account by clicking *Sign Up* and provide your information
@@ -131,126 +150,44 @@ At the time of writing the instructions mano version is 1.2 so use
 +        hand_r = load(f, encoding='latin1')
 ```
 
-#### Download SMPL model
 
-- Go to [SMPL website](http://smpl.is.tue.mpg.de/)
-- Create an account by clicking *Sign Up* and provide your information
-- Download and unzip `SMPL for Python users`, copy the `models` folder to `assets/models`. Note that all code and data from this download falls under the [SMPL license](http://smpl.is.tue.mpg.de/license_body).
 
-#### OPTIONAL : Download LSUN dataset (to generate images on LSUN backgrounds)
+## Demo
+<!-- We provide [exemplary grasps](assets/grasps/drill_grasps.txt) for the 3D drill model used in our synthetic and real datasets. -->
+COMING SOON.
 
-Download [LSUN](https://www.yf.io/p/lsun) dataset following the [instructions](https://www.yf.io/p/lsun).
+The 3D drill model can be downloaded [here](https://drive.google.com/file/d/1j3V2CTVEVPzI3Ybh159dfLtRXaoTqa00/view?usp=sharing).
 
-#### OPTIONAL : Download ImageNet dataset (to generate images on ImageNet backgrounds)
+Our synthetic dataset is available on the [project page](http://medicalaugmentedreality.org/handobject.html).
 
-- Download original images from [here](http://image-net.org/download)
+## Render Grasps
 
-#### Download body+hand textures and grasp information
-
-- Request data on the [ObMan webpage](https://www.di.ens.fr/willow/research/obman/data/)
-
-- Download grasp and texture zips
-
-You should receive two links that will allow you to download `bodywithands.zip` and `shapenet_grasps.zip`.
-
-- Unzip texture zip
-
+<!-- To generate synthetic samples using the provided [exemplary grasps](assets/grasps/drill_grasps.txt) and [drill model](https://drive.google.com/file/d/1j3V2CTVEVPzI3Ybh159dfLtRXaoTqa00/view?usp=sharing), run the following command: -->
+To create samples for custom 3D models, generated the required grasps with the [Grasp Generator](https://github.com/jonashein/grasp_generator) and adjust the paths in the arguments accordingly:
 ```
-cd assets/textures
-mv path/to/downloaded/bodywithands.zip .
-unzip bodywithands.zip
-cd ../..
+blender-2.82a-linux64/blender -noaudio -t 8 -P grasp_renderer.py -- '{"max_grasps_per_object": 300, "renderings_per_grasp": 50, "split": "train", "grasp_folder": "assets/grasps/", "backgrounds_path": "assets/backgrounds/", "results_root": "datasets/synthetic/"}'
 ```
 
-- Unzip the grasp information
+## Citations
 
-```sh
-cd assets/grasps
-mv path/to/downloaded/shapenet_grasps.zip .
-unzip shapenet_grasps.zip
-cd ../../
+If you find this code useful for your research, please consider citing:
+
+* the publication that this code was adapted for
+```
+@inproceedings{hein21_towards,
+  title     = {Towards Markerless Surgical Tool and Hand Pose Estimation},
+  author    = {Hein, Jonas and Seibold, Matthias and Bogo, Federica and Farshad, Mazda and Pollefeys, Marc and Fürnstahl, Philipp and Navab, Nassir},
+  booktitle = {IPCAI},
+  year      = {2021}
+}
 ```
 
-- Your structure should look like this:
-
+* the publication it builds upon and that this code was originally developed for
 ```
-obman_render/
-  assets/
-    models/
-      SMPLH_female.pkl
-      basicModel_f_lbs_10_207_0_v1.0.2.fbx'
-      basicModel_m_lbs_10_207_0_v1.0.2.fbx'
-      ...
-    grasps/
-      shapenet_grasps/
-      shapenet_grasps_splits.csv
-    SURREAL/
-      smpl_data/
-      	smpl_data.npz
-    ...
-```
-
-# Launch !
-
-## Minimal version on white background
-
-### Hands only
-
-`path/to/blender -noaudio -t 1 -P blender_grasps_sacred.py -- '{"frame_nb": 10, "frame_start": 0, "results_root": "datageneration/tmp", "background_datasets": ["white"]}'`
-
-### Grasping objects
-
-`path/to/blender -noaudio -t 1 -P blender_hands_sacred.py -- '{"frame_nb": 10, "frame_start": 0, "results_root": "datageneration/tmp", "background_datasets": ["white"]}'`
-
-## Full version with image backgrounds
-
-### Hands only
-
-`path/to/blender -noaudio -t 1 -P blender_hands_sacred.py -- '{"frame_nb": 10, "frame_start": 0, "results_root": "datageneration/tmp", "background_datasets": ["lsun", "imagenet"], "imagenet_path": "/path/to/imagenet", "lsun_path": "/path/to/lsun"}'`
-
-
-### Grasping objects
-
-`path/to/blender -noaudio -t 1 -P blender_grasps_sacred.py -- '{"frame_nb": 10, "frame_start": 0, "results_root": "datageneration/tmp", "background_datasets": ["lsun", "imagenet"], "imagenet_path": "/path/to/imagenet", "lsun_path": "/path/to/lsun"}'`
-
-# Citations
-
-If you find this code useful for your research, consider citing:
-
-- the publication this code has been developped for
-
-```
-@INPROCEEDINGS{hasson19_obman,
+@inproceedings{hasson19_obman,
   title     = {Learning joint reconstruction of hands and manipulated objects},
   author    = {Hasson, Yana and Varol, G{\"u}l and Tzionas, Dimitris and Kalevatykh, Igor and Black, Michael J. and Laptev, Ivan and Schmid, Cordelia},
   booktitle = {CVPR},
   year      = {2019}
 }
 ```
-
-- the publication it builds upon, for synthetic data generation of humans
-
-```
-@INPROCEEDINGS{varol17_surreal,  
-  title     = {Learning from Synthetic Humans},  
-  author    = {Varol, G{\"u}l and Romero, Javier and Martin, Xavier and Mahmood, Naureen and Black, Michael J. and Laptev, Ivan and Schmid, Cordelia},  
-  booktitle = {CVPR},  
-  year      = {2017}  
-}
-```
-
-- the publication describing the used hand model: [MANO](http://mano.is.tue.mpg.de):
-
-```
-@article{MANO:SIGGRAPHASIA:2017,
-  title = {Embodied Hands: Modeling and Capturing Hands and Bodies Together},
-  author = {Romero, Javier and Tzionas, Dimitrios and Black, Michael J.},
-  journal = {ACM Transactions on Graphics, (Proc. SIGGRAPH Asia)},
-  publisher = {ACM},
-  month = nov,
-  year = {2017},
-  url = {http://doi.acm.org/10.1145/3130800.3130883},
-  month_numeric = {11}
-}
-```
-

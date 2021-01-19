@@ -6,15 +6,15 @@ def set_camera(camera_name='Camera'):
     # set camera properties and initial position
     bpy.ops.object.select_all(action='DESELECT')
     cam_ob = bpy.data.objects[camera_name]
-    scene = bpy.context.scene  # bpy.data.scenes['Scene'] #
-    # scene = bpy.data.scenes['Scene']  # Starts from default blender scene
-    cam_ob.select = True
+    cam_ob.select_set(True)
     cam_ob.animation_data_clear()
     cam_ob.data.lens = 60  # import math  cam_ob.data.angle = math.radians(40)
     cam_ob.data.clip_start = 0.1
     cam_ob.data.sensor_width = 32
-    scene.camera.location = Vector((0, 0, 0))
-    scene.camera.rotation_euler = Vector((0, 0, 0))
+    cam_ob.location = Vector((0, 0, 0))
+    cam_ob.rotation_euler = Vector((0, 0, 0))
+    cam_ob.matrix_world = Matrix(((1., 0., 0., 0), (0., 1., 0., 0.), (0., 0., 1., 0.),
+                   (0., 0., 0., 1.)))
 
 
 def check_camera(camera_name='Camera'):
@@ -91,7 +91,7 @@ def get_extrinsic(cam_name='Camera'):
     R_b2cv = Matrix(((1, 0, 0), (0, -1, 0), (0, 0, -1)))
 
     # Multiply the two to get world to our usual computer vision setting
-    R_world2cv = R_b2cv * R_world2b
+    R_world2cv = R_b2cv @ R_world2b
     assert cam_obj.location == Vector((0, 0, 0))
     extrinsic = Matrix(
         ((R_world2cv[0][:3] + (0, )), (R_world2cv[1][:3] + (0, )),

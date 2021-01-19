@@ -12,11 +12,11 @@ def get_all_backgrounds(folder='/sequoia/data2/gvarol/datasets/LSUN/data/img'):
     return bg_names
 
 
-def set_cycle_nodes(scene, bg_name, segm_path, depth_path):
+def set_cycle_nodes(scene, bg_name, segm_path, depth_path, bg_scale=1.0):
     # Get node tree
     scene.use_nodes = True
-    scene.render.layers['RenderLayer'].use_pass_material_index = True
-    scene.render.alpha_mode = 'TRANSPARENT'
+    scene.view_layers["View Layer"].use_pass_material_index = True
+    scene.render.film_transparent = True
     node_tree = scene.node_tree
 
     # Remove existing nodes
@@ -33,9 +33,10 @@ def set_cycle_nodes(scene, bg_name, segm_path, depth_path):
 
     # Scale background by croping
     scale_node = node_tree.nodes.new(type="CompositorNodeScale")
-    scale_node.space = "RENDER_SIZE"
-    scale_node.frame_method = "CROP"
-    scale_node.location = -200, 200
+    scale_node.space = "RELATIVE"
+    scale_node.location = bg_scale, bg_scale
+    #scale_node.frame_method = "CROP"
+    #scale_node.location = -200, 200
     node_tree.links.new(bg_node.outputs[0], scale_node.inputs[0])
 
     # Get rendering
@@ -48,8 +49,7 @@ def set_cycle_nodes(scene, bg_name, segm_path, depth_path):
     depth_node.base_path = os.path.dirname(depth_path)
     depth_node.file_slots[0].path = os.path.basename(depth_path)
     depth_node.location = 200, 0
-    node_tree.links.new(render_node.outputs['Z'], depth_node.inputs[0])
-
+    node_tree.links.new(render_node.outputs['Depth'], depth_node.inputs[0])
 
     # Overlay background image and rendering
     alpha_node = node_tree.nodes.new(type="CompositorNodeAlphaOver")

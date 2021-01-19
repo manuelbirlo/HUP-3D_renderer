@@ -37,7 +37,7 @@ assets/models/SMPLH_female.pkl
 assets/textures/bodywithands
 assets/textures/bodywithands.zip
 assets/grasps/shapenet_grasps
-assets/SURREAL
+assets/SURREAL/smpl_data
 
 misc/
 data/

@@ -12,5 +12,5 @@ def load_obj_model(geometry_path, join=True):
 
 def delete_obj_model(obj):
     bpy.ops.object.select_all(action='DESELECT')
-    obj.select = True
+    obj.select_set(True)
     bpy.ops.object.delete()
