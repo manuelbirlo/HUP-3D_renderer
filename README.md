@@ -1,7 +1,12 @@
 # Towards Markerless Surgical Tool and Hand Pose Estimation: Synthetic Grasp Rendering
 
-- [Project page](http://medicalaugmentedreality.org/handobject.html)
-<!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
+- [Project page](http://medicalaugmentedreality.org/handobject.html) <!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
+- [Synthetic Grasp Generation](https://github.com/jonashein/grasp_generator)
+- [Synthetic Grasp Rendering](https://github.com/jonashein/grasp_renderer)
+- [Real Dataset Recording](https://github.com/jonashein/handobject_dataset_recorder)
+- [HandObjectNet Baseline](https://github.com/jonashein/handobjectnet_baseline)
+- [PVNet Baseline](https://github.com/jonashein/pvnet_baseline)
+- [Combined Model Baseline](https://github.com/jonashein/baseline_combination)
 
 This grasp renderer is based on the [Obman dataset generation pipeline](https://github.com/hassony2/obman_render).
 The synthetic grasps needed for this renderer can be generated with the [Grasp Generator](https://github.com/jonashein/grasp_generator).
