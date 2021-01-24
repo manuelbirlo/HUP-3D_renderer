@@ -3,7 +3,7 @@
 - [Project page](http://medicalaugmentedreality.org/handobject.html) <!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
 - [Synthetic Grasp Generation](https://github.com/jonashein/grasp_generator)
 - [Synthetic Grasp Rendering](https://github.com/jonashein/grasp_renderer)
-- [Real Dataset Recording](https://github.com/jonashein/handobject_dataset_recorder)
+- [Real Dataset Generation](https://github.com/jonashein/handobject_dataset_creator)
 - [HandObjectNet Baseline](https://github.com/jonashein/handobjectnet_baseline)
 - [PVNet Baseline](https://github.com/jonashein/pvnet_baseline)
 - [Combined Model Baseline](https://github.com/jonashein/baseline_combination)
