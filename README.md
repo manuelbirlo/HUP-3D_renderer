@@ -31,8 +31,7 @@ cd grasp_renderer
 
 ### Download and install prerequisites
 
-#### [Blender 2.82a](https://download.blender.org/release/Blender2.82a/) 
-Download [Blender 2.82a](https://download.blender.org/release/Blender2.82a/):
+#### Download [Blender 2.82a](https://download.blender.org/release/Blender2.82/):
 ```sh
 wget https://download.blender.org/release/Blender2.82/blender-2.82a-linux64.tar.xz
 tar -xvf blender-2.82a-linux64.tar.xz
