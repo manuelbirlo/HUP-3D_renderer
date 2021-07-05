@@ -40,8 +40,8 @@ tar -xvf blender-2.82a-linux64.tar.xz
 Install dependencies using pip:
 ```sh
 wget https://bootstrap.pypa.io/get-pip.py
-blender-2.82a-linux64/2.82/python/bin/python3.7m get-pip.py
-blender-2.78c-linux-glibc219-x86_64/2.78/python/bin/pip install -r requirements.txt
+blender-2.82a-linux64/2.82/python/bin/python3.7m get-pip.py 
+blender-2.82a-linux64/2.82/python/bin/pip install -r requirements.txt
 ```
 
 #### Download [SURREAL](https://www.di.ens.fr/willow/research/surreal/data/) assets
