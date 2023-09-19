@@ -134,19 +134,29 @@ class GraspRenderer:
 
 
     def renderDepth(self, tmp_depth, tmp_hand_depth, tmp_obj_depth, frame_prefix):
-        depth, depth_min, depth_max = depthutils.convert_depth(tmp_depth)
+       
+        """
+        Calling new function 'convert_depth_and_swap_pixed_intensity' now instead of 'convert_depth' 
+        in order to ensure that generated depth images have swapped intensity values 
+        (lighter pixels = closer, dark pixels = further away)
+        """
+        depth, depth_min, depth_max = depthutils.convert_depth_and_swap_pixed_intensity(tmp_depth)
 
-        
         # Concatenate depth as rgb
         #hand_depth, hand_depth_min, hand_depth_max = depthutils.convert_depth(
         #    tmp_hand_depth)
         #obj_depth, obj_depth_min, obj_depth_max = depthutils.convert_depth(
         #    tmp_obj_depth)
 
-        # Write depth image
+        """
+        Write depth image: 
+        Removed stacking of depth, hand_depth and obj_depth in order to ensure that proper depth image
+        with proper depth values accross the image is returned. Previously, the hand and the object 
+        had their own references for depth values. 
+
+        """
         #depth = np.stack([depth, hand_depth, obj_depth], axis=2)
-        final_depth_path = os.path.join(self.folder_depth,
-                                        '{}.png'.format(frame_prefix))
+        final_depth_path = os.path.join(self.folder_depth,'{}.png'.format(frame_prefix))
         cv2.imwrite(final_depth_path, depth)
 
         depth_info = {
