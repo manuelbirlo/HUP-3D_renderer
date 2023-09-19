@@ -136,14 +136,15 @@ class GraspRenderer:
     def renderDepth(self, tmp_depth, tmp_hand_depth, tmp_obj_depth, frame_prefix):
         depth, depth_min, depth_max = depthutils.convert_depth(tmp_depth)
 
+        
         # Concatenate depth as rgb
-        hand_depth, hand_depth_min, hand_depth_max = depthutils.convert_depth(
-            tmp_hand_depth)
-        obj_depth, obj_depth_min, obj_depth_max = depthutils.convert_depth(
-            tmp_obj_depth)
+        #hand_depth, hand_depth_min, hand_depth_max = depthutils.convert_depth(
+        #    tmp_hand_depth)
+        #obj_depth, obj_depth_min, obj_depth_max = depthutils.convert_depth(
+        #    tmp_obj_depth)
 
         # Write depth image
-        depth = np.stack([depth, hand_depth, obj_depth], axis=2)
+        #depth = np.stack([depth, hand_depth, obj_depth], axis=2)
         final_depth_path = os.path.join(self.folder_depth,
                                         '{}.png'.format(frame_prefix))
         cv2.imwrite(final_depth_path, depth)
@@ -151,10 +152,10 @@ class GraspRenderer:
         depth_info = {
             'depth_min': depth_min,
             'depth_max': depth_max,
-            'hand_depth_min': hand_depth_min,
-            'hand_depth_max': hand_depth_max,
-            'obj_depth_min': obj_depth_min,
-            'obj_depth_max': obj_depth_max
+            #'hand_depth_min': hand_depth_min,
+            #'hand_depth_max': hand_depth_max,
+            #'obj_depth_min': obj_depth_min,
+            #'obj_depth_max': obj_depth_max
         }
         return depth_info
 
