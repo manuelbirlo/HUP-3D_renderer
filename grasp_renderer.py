@@ -5,6 +5,9 @@ import numpy as np
 import json
 import pickle
 import sys
+import csv
+import time
+
 from tqdm import tqdm
 
 root = '.'
@@ -17,7 +20,8 @@ class GraspRenderer:
 
     def __init__(self, results_root, backgrounds_path, obj_texture_path,
                  renderings_per_grasp=1, min_obj_ratio=0.4, render_body=False,
-                 ambiant_mean=0.7, ambiant_add=0.5, z_min=0.3, z_max = 0.5, split="train"):
+                 ambiant_mean=0.7, ambiant_add=0.5, z_min=0.3, z_max = 0.5, split="train",
+                 max_data_recording_iterations=50):
         assert split in ["train", "val", "test"], "split parameter has to be either train, val, or test!"
         assert 0.0 <= min_obj_ratio and min_obj_ratio <= 1.0, "min_obj_ratio has to be in [0, 1]!"
 
@@ -38,7 +42,8 @@ class GraspRenderer:
         self.loadBackgrounds(backgrounds_path, self.split)
         self.loadBodyTextures(self.split)
         self.loadObjectTextures(obj_texture_path)
-
+        self.current_data_recording_iterations = 0
+        self.max_data_recording_iterations = max_data_recording_iterations
 
     def createConcatSegm(self, tmp_segm_path, tmp_segm_obj_path, tmp_segm_hand_path, frame_prefix):
         segm_img = cv2.imread(tmp_segm_path)[:, :, 0]
@@ -135,28 +140,16 @@ class GraspRenderer:
 
     def renderDepth(self, tmp_depth, tmp_hand_depth, tmp_obj_depth, frame_prefix):
        
-        """
-        Calling new function 'convert_depth_and_swap_pixed_intensity' now instead of 'convert_depth' 
-        in order to ensure that generated depth images have swapped intensity values 
-        (lighter pixels = closer, dark pixels = further away)
-        """
+        # exit()
         depth, depth_min, depth_max = depthutils.convert_depth_and_swap_pixed_intensity(tmp_depth)
 
         # Concatenate depth as rgb
-        #hand_depth, hand_depth_min, hand_depth_max = depthutils.convert_depth(
-        #    tmp_hand_depth)
-        #obj_depth, obj_depth_min, obj_depth_max = depthutils.convert_depth(
-        #    tmp_obj_depth)
+        #hand_depth, hand_depth_min, hand_depth_max = depthutils.convert_depth(tmp_hand_depth)
+        #obj_depth, obj_depth_min, obj_depth_max = depthutils.convert_depth(tmp_obj_depth)
 
-        """
-        Write depth image: 
-        Removed stacking of depth, hand_depth and obj_depth in order to ensure that proper depth image
-        with proper depth values accross the image is returned. Previously, the hand and the object 
-        had their own references for depth values. 
-
-        """
+        # Write depth image
         #depth = np.stack([depth, hand_depth, obj_depth], axis=2)
-        final_depth_path = os.path.join(self.folder_depth,'{}.png'.format(frame_prefix))
+        final_depth_path = os.path.join(self.folder_depth, '{}.png'.format(frame_prefix))
         cv2.imwrite(final_depth_path, depth)
 
         depth_info = {
@@ -170,7 +163,7 @@ class GraspRenderer:
         return depth_info
 
 
-    def renderGrasp(self, grasp, grasp_idx):
+    def renderGrasp(self, grasp, grasp_idx, debug_data_file_writer = None):
         assert self.backgrounds is not None, "No backgrounds loaded!"
         assert self.body_textures is not None, "No body textures loaded!"
 
@@ -209,7 +202,7 @@ class GraspRenderer:
             #meta_infos.update(obj_texture_info)
 
             # Set hand and object pose
-            hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max)
+            hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, debug_data_file_writer)
             meta_infos.update(hand_info)
 
             # Save grasp info
@@ -225,6 +218,7 @@ class GraspRenderer:
             meta_infos['bg_path'] = bg_path
 
             # Randomly pick clothing texture
+            print("++++++++++++++++++++= self.body_textures: {}".format(self.body_textures))
             tex_path = random.choice(self.body_textures)
             meta_infos['body_tex'] = tex_path
             self.scene.setSMPLTexture(tex_path)
@@ -298,6 +292,14 @@ class GraspRenderer:
             self.scene.deleteObject()
             self.scene.deleteMaterials()
 
+            self.current_data_recording_iterations += 1
+            print("------ Updated iteration counter to {} / {} ------".format(self.current_data_recording_iterations, self.max_data_recording_iterations))
+
+            if (self.current_data_recording_iterations >= self.max_data_recording_iterations):
+                 # Exit application if data recording iterations exceeded defined threshold.
+                 print("----- Exit program after {} iterations -----".format(self.max_data_recording_iterations))  
+                 sys.exit(0)
+
 
     def renderGraspsInDir(self, grasp_folder, mano_right_path, smpl_model_path, smpl_data_path,
                           texture_zoom=1, max_grasps_per_object=2, filter_angle=94):
@@ -311,63 +313,73 @@ class GraspRenderer:
 
         inv_hand_pca = get_inv_hand_pca(mano_path=mano_right_path)
 
-        for grasp_file in grasp_files:
-            with open(grasp_file, 'r') as f:
-                grasp_list = json.load(f)
-            grasp_count = len(grasp_list)
-            print("Found {} grasps for object {}".format(grasp_count, grasp_file))
+        with open("recorded_data.csv", "w") as debug_data_file:
+            debug_data_file_writer = csv.writer(debug_data_file)
+            debug_data_file_writer.writerow(["Time", "hand_head_dist", "rand_z", "headToHand", "rotHeadToHand", "headToPelvis", "rotHeadToPelvis", "global_rot_in_axisangle", "debug_left_hand_pose", "debug_right_hand_pose"]) # TO BE DEFINED
+            for grasp_file in grasp_files:
+                with open(grasp_file, 'r') as f:
+                    grasp_list = json.load(f)
+                grasp_count = len(grasp_list)
+                print("Found {} grasps for object {}".format(grasp_count, grasp_file))
 
-            grasps_rendered = 0
-            for idx, grasp in enumerate(grasp_list):
-                if grasps_rendered >= max_grasps_per_object:
-                    print("Reached maximum of {} grasps for object {}".format(max_grasps_per_object, grasp_file))
-                    break
+                grasps_rendered = 0
+                for idx, grasp in enumerate(grasp_list):
+                    if grasps_rendered >= max_grasps_per_object:
+                        print("Reached maximum of {} grasps for object {}".format(max_grasps_per_object, grasp_file))
+                        break
 
-                if grasp_wrong(grasp, angle=filter_angle):
-                    print("Skipping wrong grasp.")
-                    continue
+                    if grasp_wrong(grasp, angle=filter_angle):
+                        print("Skipping wrong grasp.")
+                        continue
 
-                grasp_info = {
-                    'obj_path':
-                        grasp['body'],
-                    'sample_scale':
-                        1.0,
-                    'pose':
-                        grasp['pose'],
-                    'hand_pose':
-                        grasp['mano_pose'],
-                    'hand_trans':
-                        grasp['mano_trans'][0],
-                    'pca_pose':
-                        np.array(
-                            grasp['mano_pose'][3:]).dot(inv_hand_pca),
-                    'hand_global_rot':
-                        grasp['mano_pose'][:3],
-                    'grasp_quality':
-                        grasp['quality'],
-                    'grasp_epsilon':
-                        grasp['epsilon'],
-                    'grasp_volume':
-                        grasp['volume']
-                }
+                    grasp_info = {
+                        'obj_path':
+                            grasp['body'],
+                        'sample_scale':
+                            1.0,
+                        'pose':
+                            grasp['pose'],
+                        'hand_pose':
+                            grasp['mano_pose'],
+                        'hand_trans':
+                            grasp['mano_trans'][0],
+                        'pca_pose':
+                            np.array(
+                                grasp['mano_pose'][3:]).dot(inv_hand_pca),
+                        'hand_global_rot':
+                            grasp['mano_pose'][:3],
+                        'grasp_quality':
+                            grasp['quality'],
+                        'grasp_epsilon':
+                            grasp['epsilon'],
+                        'grasp_volume':
+                            grasp['volume']
+                    }
 
-                self.renderGrasp(grasp_info, idx)
-                grasps_rendered += 1
+                    self.renderGrasp(grasp_info, idx, debug_data_file_writer)
+                    grasps_rendered += 1
+                    
+                       
 
+
+
+                    
 
 if __name__ == "__main__":
     root = '.'
     sys.path.insert(0, root)
     recover_json_string = ' '.join(sys.argv[sys.argv.index('--') + 1:])
 
+    data_recording_start_time = time.time()
+
     config = {
         "results_root": "datageneration/tmp/",
         "grasp_folder": "assets/grasps/",
         "max_grasps_per_object": 2,
-        "mano_right_path": "assets/models/MANO_RIGHT.pkl",
-        "smpl_model_path": "assets/models/SMPLH_female.pkl",
+        "mano_right_path": "assets/mano_v1_2/models/MANO_RIGHT.pkl",
+        "smpl_model_path": "assets/mano_v1_2/models/SMPLH_female.pkl",
         "smpl_data_path": "assets/SURREAL/smpl_data/smpl_data.npz",
-        "obj_texture_path": "assets/model_textures/",
+        "obj_texture_path": "assets/textures/",
         "backgrounds_path": "assets/backgrounds/",
         "ambiant_mean": 0.7,
         "ambiant_add": 0.5,
@@ -375,12 +387,15 @@ if __name__ == "__main__":
         "min_obj_ratio": 0.4,
         "texture_zoom": 1,
         "render_body": True,
-        "split": "train"
+        "split": "train",
+        "max_data_recording_iterations": 50 
     }
 
     json_config = json.loads(recover_json_string)
     config.update(json_config)
 
+    print("__________MAX GRASPS PER OBJECT: {}".format(config["max_grasps_per_object"]))
+    
     gr = GraspRenderer(results_root=config["results_root"],
                        obj_texture_path=config["obj_texture_path"],
                        backgrounds_path=config["backgrounds_path"],
@@ -389,7 +404,9 @@ if __name__ == "__main__":
                        ambiant_mean=config["ambiant_mean"],
                        min_obj_ratio=config["min_obj_ratio"],
                        render_body=config["render_body"],
-                       split=config["split"])
+                       split=config["split"],
+                       max_data_recording_iterations=config["max_data_recording_iterations"])
+    
     gr.renderGraspsInDir(grasp_folder=config["grasp_folder"],
                          mano_right_path=config["mano_right_path"],
                          smpl_model_path=config["smpl_model_path"],

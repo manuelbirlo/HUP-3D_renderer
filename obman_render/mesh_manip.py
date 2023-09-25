@@ -2,8 +2,12 @@ from copy import deepcopy
 import sys
 import os
 import random
+import chumpy
 import numpy as np
+import datetime
 from scipy.spatial.transform import Rotation
+
+os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
 
 root = '.'
 sys.path.insert(0, root)
@@ -118,7 +122,7 @@ def random_global_rotation():
     return np.squeeze(randaxisangle)
 
 
-def egocentric_viewpoint(global_joint_positions, head_idx=15, hand_idx=40, pelvis_idx=0, handNoise=np.array([[0.0], [0.0], [0.0]])):
+def egocentric_viewpoint(global_joint_positions, head_idx=15, hand_idx=40, pelvis_idx=0, handNoise=np.array([[0.0], [0.0], [0.0]]), debug_data_file_writer = None):
     '''
     Rotate head->hand vector into z axis (same direction as camera)
     :param global_joint_positions: array of global joint positions for the body skeleton
@@ -180,6 +184,10 @@ def egocentric_viewpoint(global_joint_positions, head_idx=15, hand_idx=40, pelvi
 
     axisangle = Rotation.from_matrix(rot).as_rotvec()
     #print("Norm: {}".format(np.linalg.norm(axisangle)))
+
+    if debug_data_file_writer is not None:
+       debug_data_file_writer.writerow([datetime.datetime.now(), None, None, headToHand, rotHeadToHand, headToPelvis, rotHeadToPelvis, axisangle, None, None])
+       
     return axisangle
 
 
@@ -197,7 +205,8 @@ def randomized_verts(model,
                      random_pose=False,
                      body_rot=True,
                      side='right',
-                     split='train'):
+                     split='train',
+                     debug_data_file_writer = None):
     """
     Args:
         model: SMPL+H chumpy model
@@ -248,48 +257,60 @@ def randomized_verts(model,
 
     # Overwrite global rotation with uniform random rotation
     randpose[0:3] = 0
-    _, global_joint_positions = global_rigid_transformation(randpose, model.J, model.kintree_table)
+    _, global_joint_positions = global_rigid_transformation(randpose, model.J, model.kintree_table, xp=chumpy)
     global_joint_positions = np.vstack([g[:3, 3] for g in global_joint_positions])
 
     noiseFactor = 0.02
     handNoise = noiseFactor * 2.0 * (np.random.random(size=(3, 1)) - 0.5)
     if body_rot:
-        randpose[0:3] = egocentric_viewpoint(global_joint_positions, handNoise=handNoise)
+        randpose[0:3] = egocentric_viewpoint(global_joint_positions, handNoise=handNoise, debug_data_file_writer=debug_data_file_writer)
     else:
         randpose[0:3] = [-np.pi/2, 0, 0]
 
     hand_comps = int(ncomps / 2)
     hand_idx = 66
+
+    debug_left_hand_pose = None
+    debug_right_hand_pose = None
+
     if hand_pose is not None:
         if side == 'left':
             randpose[hand_idx:hand_idx + hand_comps:] = hand_pose[
                 hand_pose_offset:]
             left_rand = hand_pose[hand_pose_offset:]
+            debug_left_hand_pose = left_rand
         elif side == 'right':
             randpose[hand_idx + hand_comps:] = hand_pose[hand_pose_offset:]
             right_rand = hand_pose[hand_pose_offset:]
+            debug_right_hand_pose = right_rand
     else:
         # Alter right hand
         right_rand = np.random.uniform(
             low=-pose_var, high=pose_var, size=(hand_comps, ))
         randpose[hand_idx:hand_idx + hand_comps:] = right_rand
+        debug_right_hand_pose = right_rand
 
         # Alter left hand
         left_rand = np.random.uniform(
             low=-pose_var, high=pose_var, size=(hand_comps, ))
         randpose[hand_idx + hand_comps:] = left_rand
-
+        debug_left_hand_pose = left_rand
     model.pose[:] = randpose
 
     # Center on the hand
     hand = np.array(randpose[hand_idx : hand_idx+3], dtype=np.float).reshape([-1, 1])
     head = np.array(randpose[head_idx : head_idx+3], dtype=np.float).reshape([-1, 1])
     hand_head_dist = np.linalg.norm(hand - head) - 0.1
+
     #print("hand_head_dist: {}".format(hand_head_dist))
 
     if hand_head_dist > z_min:
         z_max = min(z_max, hand_head_dist)
     rand_z = random.uniform(z_min, z_max)
+
+    if debug_data_file_writer is not None:
+         debug_data_file_writer.writerow([datetime.datetime.now(), hand_head_dist, rand_z, None, None, None, None, None, debug_left_hand_pose, debug_right_hand_pose])
+
     trans = np.array(
         [model.J_transformed[center_idx, :].r[i] for i in range(3)])
     trans[0] = trans[0] + handNoise[0]

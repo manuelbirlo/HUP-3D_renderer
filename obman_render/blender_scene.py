@@ -4,7 +4,6 @@ import os
 import sys
 import random
 
-
 root = '.'
 sys.path.insert(0, root)
 mano_path = os.environ.get('MANO_LOCATION', None)
@@ -17,7 +16,6 @@ from obman_render import mesh_manip, render, texturing, camutils, coordutils
 from serialization import load_model
 from smpl_handpca_wrapper import load_model as smplh_load_model
 from mathutils import Matrix
-
 
 class BlenderScene:
 
@@ -188,7 +186,7 @@ class BlenderScene:
         return tmp_segm_path
 
 
-    def setHandAndObjectPose(self, grasp, z_min, z_max):
+    def setHandAndObjectPose(self, grasp, z_min, z_max, debug_data_file_writer = None):
         # Set hand pose
         if 'mano_trans' in grasp:
             self.mano_model.trans[:] = [val for val in grasp['mano_trans']]
@@ -208,7 +206,9 @@ class BlenderScene:
             hand_pose=grasp['pca_pose'],
             hand_pose_offset=0,
             random_shape=True,
-            random_pose=True)
+            random_pose=True,
+            debug_data_file_writer=debug_data_file_writer)
+        
         mesh_manip.alter_mesh(self.smplh_obj, smplh_verts.tolist())
 
         hand_info = coordutils.get_hand_body_info(
