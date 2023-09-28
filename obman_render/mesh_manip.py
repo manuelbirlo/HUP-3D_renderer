@@ -251,17 +251,21 @@ def randomized_verts(model,
 
     # Random body pose (except hand)
     randpose = np.zeros(model.pose.size)
+    # You can comment this part
     if random_pose:
         body_idx = 72
         randpose[:body_idx] = pose_data[randframe]
 
     # Overwrite global rotation with uniform random rotation
     randpose[0:3] = 0
+    
+    # We may need to tune the global_joint position parameter accordingly
     _, global_joint_positions = global_rigid_transformation(randpose, model.J, model.kintree_table, xp=chumpy)
     global_joint_positions = np.vstack([g[:3, 3] for g in global_joint_positions])
 
     noiseFactor = 0.02
     handNoise = noiseFactor * 2.0 * (np.random.random(size=(3, 1)) - 0.5)
+    # Don't add body rotation
     if body_rot:
         randpose[0:3] = egocentric_viewpoint(global_joint_positions, handNoise=handNoise, debug_data_file_writer=debug_data_file_writer)
     else:
@@ -287,16 +291,19 @@ def randomized_verts(model,
         # Alter right hand
         right_rand = np.random.uniform(
             low=-pose_var, high=pose_var, size=(hand_comps, ))
+        # Can try to initialise right_rand with np.zeros((hand_comps, ))
         randpose[hand_idx:hand_idx + hand_comps:] = right_rand
         debug_right_hand_pose = right_rand
 
         # Alter left hand
         left_rand = np.random.uniform(
             low=-pose_var, high=pose_var, size=(hand_comps, ))
+        # Can try to initialise left_rand with np.zeros((hand_comps, ))
         randpose[hand_idx + hand_comps:] = left_rand
         debug_left_hand_pose = left_rand
     model.pose[:] = randpose
-
+    # Check the final values of rand_pose
+    
     # Center on the hand
     hand = np.array(randpose[hand_idx : hand_idx+3], dtype=np.float).reshape([-1, 1])
     head = np.array(randpose[head_idx : head_idx+3], dtype=np.float).reshape([-1, 1])
@@ -306,6 +313,8 @@ def randomized_verts(model,
 
     if hand_head_dist > z_min:
         z_max = min(z_max, hand_head_dist)
+    
+    # rand_z try two setting rand_z = z_min and rand_z = z_max
     rand_z = random.uniform(z_min, z_max)
 
     if debug_data_file_writer is not None:
@@ -313,6 +322,8 @@ def randomized_verts(model,
 
     trans = np.array(
         [model.J_transformed[center_idx, :].r[i] for i in range(3)])
+    # Avoid adding any noise for hand translation in u/v coordinates
+    # so remove hand_noise
     trans[0] = trans[0] + handNoise[0]
     trans[1] = trans[1] + handNoise[1]
     # Offset in z direction

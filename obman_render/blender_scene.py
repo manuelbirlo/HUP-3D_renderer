@@ -196,6 +196,7 @@ class BlenderScene:
         mesh_manip.alter_mesh(self.mano_obj, self.mano_model.r.tolist())
 
         # Center mesh on center_idx
+        # You can even pass random_shape and random_pose =False
         smplh_verts, posed_model, meta_info = mesh_manip.randomized_verts(
             self.smplh_model,
             self.smpl_data,

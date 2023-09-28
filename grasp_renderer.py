@@ -256,7 +256,9 @@ class GraspRenderer:
             tmp_files.append(tmp_segm_hand_path)
             tmp_files.append(tmp_hand_depth)
 
-            # Check camera pose again (not sure why?)
+            # Check camera pose again (not sure why?) - to initialise to unity matrix 
+            # so that the orientations are applied just on the hand/object/body/head
+            # Hard code back the initial values
             self.scene.checkCamera()
 
             keep_render, obj_ratio = self.createConcatSegm(tmp_segm_path, tmp_segm_obj_path,
@@ -310,7 +312,7 @@ class GraspRenderer:
         # Load hand model
         self.scene.loadSMPLHModel(mano_right_path, smpl_model_path, smpl_data_path,
                                   texture_zoom=texture_zoom)
-
+        
         inv_hand_pca = get_inv_hand_pca(mano_path=mano_right_path)
 
         with open("recorded_data.csv", "w") as debug_data_file:
@@ -386,7 +388,7 @@ if __name__ == "__main__":
         "renderings_per_grasp": 1,
         "min_obj_ratio": 0.4,
         "texture_zoom": 1,
-        "render_body": True,
+        "render_body": False,
         "split": "train",
         "max_data_recording_iterations": 50 
     }
