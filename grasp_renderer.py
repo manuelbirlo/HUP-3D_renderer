@@ -378,8 +378,8 @@ if __name__ == "__main__":
         "results_root": "datageneration/tmp/",
         "grasp_folder": "assets/grasps/",
         "max_grasps_per_object": 2,
-        "mano_right_path": "assets/mano_v1_2/models/MANO_RIGHT.pkl",
-        "smpl_model_path": "assets/mano_v1_2/models/SMPLH_female.pkl",
+        "mano_right_path": "assets/models/mano_v1_2/models/MANO_RIGHT.pkl",
+        "smpl_model_path": "assets/models/mano_v1_2/models/SMPLH_female.pkl",
         "smpl_data_path": "assets/SURREAL/smpl_data/smpl_data.npz",
         "obj_texture_path": "assets/textures/",
         "backgrounds_path": "assets/backgrounds/",
@@ -390,7 +390,7 @@ if __name__ == "__main__":
         "texture_zoom": 1,
         "render_body": False,
         "split": "train",
-        "max_data_recording_iterations": 50 
+        "max_data_recording_iterations": 50
     }
 
     json_config = json.loads(recover_json_string)

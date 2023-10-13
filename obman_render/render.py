@@ -33,7 +33,7 @@ def set_cycle_nodes(scene, bg_name, segm_path, depth_path, bg_scale=1.0):
 
     # Scale background by croping
     scale_node = node_tree.nodes.new(type="CompositorNodeScale")
-    scale_node.space = "RELATIVE"
+    scale_node.space = "RENDER_SIZE" #RELATIVE"
     scale_node.location = bg_scale, bg_scale
     #scale_node.frame_method = "CROP"
     #scale_node.location = -200, 200

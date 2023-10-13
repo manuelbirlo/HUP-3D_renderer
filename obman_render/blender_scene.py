@@ -181,7 +181,8 @@ class BlenderScene:
             bg_path,
             segm_path=folder_tmp_segm,
             depth_path=depth_path,
-            bg_scale=0.5)
+            bg_scale=1.0)
+            #bg_scale=0.5)
         bpy.ops.render.render(write_still=True)
         return tmp_segm_path
 
@@ -206,8 +207,8 @@ class BlenderScene:
             side='right',
             hand_pose=grasp['pca_pose'],
             hand_pose_offset=0,
-            random_shape=True,
-            random_pose=True,
+            random_shape=False,
+            random_pose=False,
             debug_data_file_writer=debug_data_file_writer)
         
         mesh_manip.alter_mesh(self.smplh_obj, smplh_verts.tolist())
@@ -240,13 +241,17 @@ class BlenderScene:
 
     def setHandTextures(self):
         self.setHandMaterial(self.materials['rightForeArm'].node_tree,
-                             color=(0.315, 0.395, 0.5),
-                             roughness=0.8)
+                             #color=(0.315, 0.395, 0.5),
+                             color=(1.0, 0.6784313725, 0.3764705882), # skin color
+                             #roughness=0.8)
+                             roughness=1.0)
         self.setHandMaterial(self.materials['rightHand'].node_tree,
-                             color=(0.37, 0.458, 0.5),
+                             #color=(0.37, 0.458, 0.5),
+                             color=(0.5647058824, 0.5921568627, 0.768627451),
                              roughness=0.8)
         self.setHandMaterial(self.materials['rightHandIndex1'].node_tree,
-                             color=(0.37, 0.458, 0.5),
+                             #color=(0.37, 0.458, 0.5),
+                             color=(0.5647058824, 0.5921568627, 0.768627451),
                              roughness=0.8)
 
 
