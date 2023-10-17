@@ -187,7 +187,9 @@ class BlenderScene:
         return tmp_segm_path
 
 
-    def setHandAndObjectPose(self, grasp, z_min, z_max, debug_data_file_writer = None):
+    def setHandAndObjectPose(self, grasp, z_min, z_max, cam_view, debug_data_file_writer = None):
+        assert len(cam_view) == 3, "Input tuple 'cam_view' does not have required length 3"
+
         # Set hand pose
         if 'mano_trans' in grasp:
             self.mano_model.trans[:] = [val for val in grasp['mano_trans']]
@@ -209,6 +211,9 @@ class BlenderScene:
             hand_pose_offset=0,
             random_shape=False,
             random_pose=False,
+            cam_viewpoint_x = cam_view[0],
+            cam_viewpoint_y=cam_view[1],
+            cam_viewpoint_z=cam_view[2],
             debug_data_file_writer=debug_data_file_writer)
         
         mesh_manip.alter_mesh(self.smplh_obj, smplh_verts.tolist())

@@ -163,10 +163,11 @@ class GraspRenderer:
         return depth_info
 
 
-    def renderGrasp(self, grasp, grasp_idx, debug_data_file_writer = None):
+    def renderGrasp(self, grasp, grasp_idx, camera_views_to_render = [(0, 0, 0)], debug_data_file_writer = None):
         assert self.backgrounds is not None, "No backgrounds loaded!"
         assert self.body_textures is not None, "No body textures loaded!"
-
+        assert all(len(cam_view) == 3 for cam_view in camera_views_to_render), "Not all tuples in input list 'camera_views_to_render' have a length of 3"
+        
         obj_path = grasp['obj_path']
         model_name = os.path.basename(obj_path)
 
@@ -175,132 +176,138 @@ class GraspRenderer:
 
         frame_idx = 0
         while (frame_idx < self.frames_per_grasp):
-            frame_prefix = "{}_grasp{:03d}_{:04d}".format(model_name, grasp_idx + 1, frame_idx + 1)
+           
+            for cam_view in camera_views_to_render: 
+                cam_view_x = cam_view[0]
+                cam_view_y = cam_view[1]
+                cam_view_z = cam_view[2]
 
-            # Check if frame has already been rendered
-            if "{}.pkl".format(frame_prefix) in rendered_frames:
-                print("Found rendered frame {}, continuing.".format(frame_prefix))
-                frame_idx += 1
-                continue
-            else:
-                print("\nWorking on {}".format(frame_prefix))
+                frame_prefix = "{}_grasp{:03d}_{:04d}_cam_view_x{}_y{}_z{}".format(model_name, grasp_idx + 1, frame_idx + 1, cam_view_x, cam_view_y, cam_view_z)
 
-            # Load object
-            obj_info = self.scene.loadObject(obj_path)
-            #obj_texture_info, obj_osl_path, obj_oso_path = self.scene.addObjectTexture(obj_path,
-            #                                                                           obj_textures=self.obj_textures,
-            #                                                                           random_obj_textures=False)
-            self.scene.setToolMaterialPassIndices()
-            # Keep track of temporary files to delete at the end
-            tmp_files = []
-            #tmp_files.append(obj_osl_path)
-            #tmp_files.append(obj_oso_path)
+                # Check if frame has already been rendered
+                if "{}.pkl".format(frame_prefix) in rendered_frames:
+                    print("Found rendered frame {}, continuing.".format(frame_prefix))
+                    frame_idx += 1
+                    continue
+                else:
+                    print("\nWorking on {}".format(frame_prefix))
 
-            # Keep track of meta data
-            meta_infos = {}
-            meta_infos.update(obj_info)
-            #meta_infos.update(obj_texture_info)
+                # Load object
+                obj_info = self.scene.loadObject(obj_path)
+                #obj_texture_info, obj_osl_path, obj_oso_path = self.scene.addObjectTexture(obj_path,
+                #                                                                           obj_textures=self.obj_textures,
+                #                                                                           random_obj_textures=False)
+                self.scene.setToolMaterialPassIndices()
+                # Keep track of temporary files to delete at the end
+                tmp_files = []
+                #tmp_files.append(obj_osl_path)
+                #tmp_files.append(obj_oso_path)
 
-            # Set hand and object pose
-            hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, debug_data_file_writer)
-            meta_infos.update(hand_info)
+                # Keep track of meta data
+                meta_infos = {}
+                meta_infos.update(obj_info)
+                #meta_infos.update(obj_texture_info)
 
-            # Save grasp info
-            for label in [
-                'obj_path', 'pca_pose', 'grasp_quality',
-                'grasp_epsilon', 'grasp_volume', 'hand_trans',
-                'hand_global_rot', 'hand_pose'
-            ]:
-                meta_infos[label] = grasp[label]
+                # Set hand and object pose
+                hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, debug_data_file_writer)
+                meta_infos.update(hand_info)
 
-            # Randomly pick background
-            bg_path = random.choice(self.backgrounds)
-            meta_infos['bg_path'] = bg_path
+                # Save grasp info
+                for label in [
+                    'obj_path', 'pca_pose', 'grasp_quality',
+                    'grasp_epsilon', 'grasp_volume', 'hand_trans',
+                    'hand_global_rot', 'hand_pose'
+                ]:
+                    meta_infos[label] = grasp[label]
 
-            # Randomly pick clothing texture
-            print("++++++++++++++++++++= self.body_textures: {}".format(self.body_textures))
-            tex_path = random.choice(self.body_textures)
-            meta_infos['body_tex'] = tex_path
-            self.scene.setSMPLTexture(tex_path)
-            self.scene.setHandTextures()
+                # Randomly pick background
+                bg_path = random.choice(self.backgrounds)
+                meta_infos['bg_path'] = bg_path
 
-            # Set lighting conditions
-            lighting_info = self.scene.setLighting()
-            meta_infos.update(lighting_info)
+                # Randomly pick clothing texture
+                print("++++++++++++++++++++= self.body_textures: {}".format(self.body_textures))
+                tex_path = random.choice(self.body_textures)
+                meta_infos['body_tex'] = tex_path
+                self.scene.setSMPLTexture(tex_path)
+                self.scene.setHandTextures()
 
-            # Render RGB
-            img_path = os.path.join(self.folder_rgb, '{}.jpg'.format(frame_prefix))
-            depth_path = os.path.join(self.folder_depth, frame_prefix)
-            tmp_depth = depth_path + '{:04d}.exr'.format(1)
-            tmp_segm_path = self.scene.renderRGB(img_path, bg_path, depth_path, self.folder_temp_segm)
-            tmp_files.append(tmp_segm_path)
-            tmp_files.append(tmp_depth)
+                # Set lighting conditions
+                lighting_info = self.scene.setLighting()
+                meta_infos.update(lighting_info)
 
-            # Render RGB obj only
-            obj_img_path = os.path.join(self.folder_rgb_obj,
-                                        '{}.jpg'.format(frame_prefix))
-            obj_depth_path = os.path.join(self.folder_depth_obj, frame_prefix)
-            tmp_obj_depth = obj_depth_path + '{:04d}.exr'.format(1)
-            tmp_segm_obj_path = self.scene.renderRGB(obj_img_path, bg_path, obj_depth_path,
-                                                     self.folder_temp_segm, hide_smplh=True)
-            tmp_files.append(tmp_segm_obj_path)
-            tmp_files.append(tmp_obj_depth)
+                # Render RGB
+                img_path = os.path.join(self.folder_rgb, '{}.jpg'.format(frame_prefix))
+                depth_path = os.path.join(self.folder_depth, frame_prefix)
+                tmp_depth = depth_path + '{:04d}.exr'.format(1)
+                tmp_segm_path = self.scene.renderRGB(img_path, bg_path, depth_path, self.folder_temp_segm)
+                tmp_files.append(tmp_segm_path)
+                tmp_files.append(tmp_depth)
 
-            # Render RGB hand only
-            hand_img_path = os.path.join(self.folder_rgb_hand,
-                                         '{}.jpg'.format(frame_prefix))
-            hand_depth_path = os.path.join(self.folder_depth_hand, frame_prefix)
-            tmp_hand_depth = hand_depth_path + '{:04d}.exr'.format(1)
-            tmp_segm_hand_path = self.scene.renderRGB(hand_img_path, bg_path, hand_depth_path,
-                                                     self.folder_temp_segm, hide_obj=True)
-            tmp_files.append(tmp_segm_hand_path)
-            tmp_files.append(tmp_hand_depth)
+                # Render RGB obj only
+                obj_img_path = os.path.join(self.folder_rgb_obj,
+                                            '{}.jpg'.format(frame_prefix))
+                obj_depth_path = os.path.join(self.folder_depth_obj, frame_prefix)
+                tmp_obj_depth = obj_depth_path + '{:04d}.exr'.format(1)
+                tmp_segm_obj_path = self.scene.renderRGB(obj_img_path, bg_path, obj_depth_path,
+                                                        self.folder_temp_segm, hide_smplh=True)
+                tmp_files.append(tmp_segm_obj_path)
+                tmp_files.append(tmp_obj_depth)
 
-            # Check camera pose again (not sure why?) - to initialise to unity matrix 
-            # so that the orientations are applied just on the hand/object/body/head
-            # Hard code back the initial values
-            self.scene.checkCamera()
+                # Render RGB hand only
+                hand_img_path = os.path.join(self.folder_rgb_hand,
+                                            '{}.jpg'.format(frame_prefix))
+                hand_depth_path = os.path.join(self.folder_depth_hand, frame_prefix)
+                tmp_hand_depth = hand_depth_path + '{:04d}.exr'.format(1)
+                tmp_segm_hand_path = self.scene.renderRGB(hand_img_path, bg_path, hand_depth_path,
+                                                        self.folder_temp_segm, hide_obj=True)
+                tmp_files.append(tmp_segm_hand_path)
+                tmp_files.append(tmp_hand_depth)
 
-            keep_render, obj_ratio = self.createConcatSegm(tmp_segm_path, tmp_segm_obj_path,
-                                                           tmp_segm_hand_path, frame_prefix)
-            meta_infos['obj_visibility_ratio'] = obj_ratio
+                # Check camera pose again (not sure why?) - to initialise to unity matrix 
+                # so that the orientations are applied just on the hand/object/body/head
+                # Hard code back the initial values
+                self.scene.checkCamera()
 
-            if keep_render:
-                # Render depth image
-                depth_infos = self.renderDepth(tmp_depth, tmp_hand_depth, tmp_obj_depth, frame_prefix)
-                meta_infos.update(depth_infos)
+                keep_render, obj_ratio = self.createConcatSegm(tmp_segm_path, tmp_segm_obj_path,
+                                                            tmp_segm_hand_path, frame_prefix)
+                meta_infos['obj_visibility_ratio'] = obj_ratio
 
-                # Save meta
-                meta_path = os.path.join(self.folder_meta,
-                                             '{}.pkl'.format(frame_prefix))
+                if keep_render:
+                    # Render depth image
+                    depth_infos = self.renderDepth(tmp_depth, tmp_hand_depth, tmp_obj_depth, frame_prefix)
+                    meta_infos.update(depth_infos)
 
-                with open(meta_path, 'wb') as meta_f:
-                    pickle.dump(meta_infos, meta_f)
+                    # Save meta
+                    meta_path = os.path.join(self.folder_meta,
+                                                '{}.pkl'.format(frame_prefix))
 
-                frame_idx += 1
-            else:
-                print("Discarding rendered image. frame_idx: {:04d}".format(frame_idx + 1))
-                tmp_files.append(img_path)
-                tmp_files.append(obj_img_path)
-                tmp_files.append(hand_img_path)
+                    with open(meta_path, 'wb') as meta_f:
+                        pickle.dump(meta_infos, meta_f)
 
-            # Remove temporary files
-            for filepath in tmp_files:
-                if os.path.isfile(filepath):
-                    os.remove(filepath)
+                    frame_idx += 1
+                else:
+                    print("Discarding rendered image. frame_idx: {:04d}".format(frame_idx + 1))
+                    tmp_files.append(img_path)
+                    tmp_files.append(obj_img_path)
+                    tmp_files.append(hand_img_path)
 
-            # Delete object
-            self.scene.clearUnused()
-            self.scene.deleteObject()
-            self.scene.deleteMaterials()
+                # Remove temporary files
+                for filepath in tmp_files:
+                    if os.path.isfile(filepath):
+                        os.remove(filepath)
 
-            self.current_data_recording_iterations += 1
-            print("------ Updated iteration counter to {} / {} ------".format(self.current_data_recording_iterations, self.max_data_recording_iterations))
+                # Delete object
+                self.scene.clearUnused()
+                self.scene.deleteObject()
+                self.scene.deleteMaterials()
 
-            if (self.current_data_recording_iterations >= self.max_data_recording_iterations):
-                 # Exit application if data recording iterations exceeded defined threshold.
-                 print("----- Exit program after {} iterations -----".format(self.max_data_recording_iterations))  
-                 sys.exit(0)
+                self.current_data_recording_iterations += 1
+                print("------ Updated iteration counter to {} / {} ------".format(self.current_data_recording_iterations, self.max_data_recording_iterations))
+
+                if (self.current_data_recording_iterations >= self.max_data_recording_iterations):
+                    # Exit application if data recording iterations exceeded defined threshold.
+                    print("----- Exit program after {} iterations -----".format(self.max_data_recording_iterations))  
+                    sys.exit(0)
 
 
     def renderGraspsInDir(self, grasp_folder, mano_right_path, smpl_model_path, smpl_data_path,
@@ -358,7 +365,12 @@ class GraspRenderer:
                             grasp['volume']
                     }
 
-                    self.renderGrasp(grasp_info, idx, debug_data_file_writer)
+                    camera_views_to_render = [
+                        (0.25*np.pi, 0, 0), (0.5*np.pi, 0, 0), (0.75*np.pi, 0, 0), (np.pi, 0, 0),
+                        (0, 0.25*np.pi, 0), (0, 0.5*np.pi, 0), (0, 0.75*np.pi, 0), (0, np.pi, 0),
+                        (0, 0, 0.25*np.pi), (0, 0, 0.5*np.pi), (0, 0, 0.75*np.pi), (0, 0, np.pi)
+                    ]
+                    self.renderGrasp(grasp_info, idx, camera_views_to_render, debug_data_file_writer)
                     grasps_rendered += 1
                     
                        

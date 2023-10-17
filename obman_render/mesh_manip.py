@@ -206,6 +206,9 @@ def randomized_verts(model,
                      body_rot=False,
                      side='right',
                      split='train',
+                     cam_viewpoint_x = 0,
+                     cam_viewpoint_y = 0,
+                     cam_viewpoint_z = 0,
                      debug_data_file_writer = None):
     """
     Args:
@@ -270,7 +273,7 @@ def randomized_verts(model,
     if body_rot:
         randpose[0:3] = egocentric_viewpoint(global_joint_positions, handNoise=handNoise, debug_data_file_writer=debug_data_file_writer)
     else:
-        randpose[0:3] = [-np.pi/2, 0, 0]
+        randpose[0:3] = [cam_viewpoint_x, cam_viewpoint_y, cam_viewpoint_z] #[-np.pi/2, 0, 0]
 
     hand_comps = int(ncomps / 2)
     hand_idx = 66
