@@ -74,6 +74,7 @@ class GraspRenderer:
         self.folder_temp_segm = os.path.join(results_root, 'tmp_segm')
         self.folder_depth = os.path.join(results_root, 'depth')
         self.folder_rgb_hand = os.path.join(results_root, 'rgb_hand')
+        self.folder_rgb_hand_with_skeleton = os.path.join(results_root, 'rgb_hand_with_skeleton')
         self.folder_rgb_obj = os.path.join(results_root, 'rgb_obj')
         self.folder_depth_hand = os.path.join(results_root, 'depth_hand')
         self.folder_depth_obj = os.path.join(results_root, 'depth_obj')
@@ -84,6 +85,7 @@ class GraspRenderer:
             self.folder_temp_segm,
             self.folder_depth,
             self.folder_rgb_hand,
+            self.folder_rgb_hand_with_skeleton,
             self.folder_rgb_obj
         ]
         # Create results directories
@@ -225,7 +227,7 @@ class GraspRenderer:
                 meta_infos['bg_path'] = bg_path
 
                 # Randomly pick clothing texture
-                print("++++++++++++++++++++= self.body_textures: {}".format(self.body_textures))
+                #print("++++++++++++++++++++= self.body_textures: {}".format(self.body_textures))
                 tex_path = random.choice(self.body_textures)
                 meta_infos['body_tex'] = tex_path
                 self.scene.setSMPLTexture(tex_path)
@@ -242,6 +244,95 @@ class GraspRenderer:
                 tmp_segm_path = self.scene.renderRGB(img_path, bg_path, depth_path, self.folder_temp_segm)
                 tmp_files.append(tmp_segm_path)
                 tmp_files.append(tmp_depth)
+
+                # ----------------------------------------------------------------------------------------------------------
+                # Render RGB with hand skeleton
+                img_hand_skeleton_path = os.path.join(self.folder_rgb_hand_with_skeleton, '{}.jpg'.format(frame_prefix))
+
+                # Return values of renderRGB(...) are not needed in this case
+                self.scene.renderRGB(img_hand_skeleton_path, bg_path, depth_path, self.folder_temp_segm)
+
+                # Reading an image in default mode 
+                reloaded_rgb_image = cv2.imread(img_path) 
+    
+                radius = 2
+                color = ()
+   
+                # Blue color in BGR 
+                color = (0, 0, 255) 
+   
+                # Line thickness of 2 px 
+                thickness = 1
+                
+                hand_info_coords_2d = hand_info['coords_2d']
+                print("******* HAND COORDS 2D: {}".format(hand_info_coords_2d))
+                #print("***************** HAND INFO KEYS: {} *********".format(hand_info.keys()))
+
+                for coords in hand_info_coords_2d:
+                    current_coords = (int(coords[0]), int(coords[1]))
+                    #print("****** CURRENT COORDS: {}, {}".format(current_coords[0], current_coords[1]))
+                    cv2.circle(reloaded_rgb_image, current_coords, radius, color, thickness)
+                
+                coord_0 = (int(hand_info_coords_2d[0][0]), int(hand_info_coords_2d[0][1]))
+                coord_1 = (int(hand_info_coords_2d[1][0]), int(hand_info_coords_2d[1][1]))
+                coord_2 = (int(hand_info_coords_2d[2][0]), int(hand_info_coords_2d[2][1]))
+                coord_3 = (int(hand_info_coords_2d[3][0]), int(hand_info_coords_2d[3][1]))
+                coord_4 = (int(hand_info_coords_2d[4][0]), int(hand_info_coords_2d[4][1]))
+                coord_5 = (int(hand_info_coords_2d[5][0]), int(hand_info_coords_2d[5][1]))
+                coord_5 = (int(hand_info_coords_2d[5][0]), int(hand_info_coords_2d[5][1]))
+                coord_6 = (int(hand_info_coords_2d[6][0]), int(hand_info_coords_2d[6][1]))
+                coord_7 = (int(hand_info_coords_2d[7][0]), int(hand_info_coords_2d[7][1]))
+                coord_8 = (int(hand_info_coords_2d[8][0]), int(hand_info_coords_2d[8][1]))
+                coord_9 = (int(hand_info_coords_2d[9][0]), int(hand_info_coords_2d[9][1]))
+                coord_10 = (int(hand_info_coords_2d[10][0]), int(hand_info_coords_2d[10][1]))
+                coord_11 = (int(hand_info_coords_2d[11][0]), int(hand_info_coords_2d[11][1]))
+                coord_12 = (int(hand_info_coords_2d[12][0]), int(hand_info_coords_2d[12][1]))
+                coord_13 = (int(hand_info_coords_2d[13][0]), int(hand_info_coords_2d[13][1]))
+                coord_14 = (int(hand_info_coords_2d[14][0]), int(hand_info_coords_2d[14][1]))
+                coord_15 = (int(hand_info_coords_2d[15][0]), int(hand_info_coords_2d[15][1]))
+                coord_16 = (int(hand_info_coords_2d[16][0]), int(hand_info_coords_2d[16][1]))
+                coord_17 = (int(hand_info_coords_2d[17][0]), int(hand_info_coords_2d[17][1]))
+                coord_18 = (int(hand_info_coords_2d[18][0]), int(hand_info_coords_2d[18][1]))
+                coord_19 = (int(hand_info_coords_2d[19][0]), int(hand_info_coords_2d[19][1]))
+                coord_20 = (int(hand_info_coords_2d[20][0]), int(hand_info_coords_2d[20][1]))
+
+                # Draw thumb lines
+                thumb_color = (0, 0, 255) # red
+                cv2.line(reloaded_rgb_image, coord_0, coord_1, thumb_color, thickness) 
+                cv2.line(reloaded_rgb_image, coord_1, coord_2, thumb_color, thickness) 
+                cv2.line(reloaded_rgb_image, coord_2, coord_3, thumb_color, thickness) 
+                cv2.line(reloaded_rgb_image, coord_3, coord_4, thumb_color, thickness) 
+
+                # Draw index finger
+                index_finger_color = (255,0,255) # fuchsia
+                cv2.line(reloaded_rgb_image, coord_0, coord_5, index_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_5, coord_6, index_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_6, coord_7, index_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_7, coord_8, index_finger_color, thickness)
+
+                # Draw middle finger
+                middle_finger_color = (255, 0, 0) # blue
+                cv2.line(reloaded_rgb_image, coord_0, coord_9, middle_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_9, coord_10, middle_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_10, coord_11, middle_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_11, coord_12, middle_finger_color, thickness)
+
+                # Draw ring finger
+                ring_finger_color = (0,140,255) # orange
+                cv2.line(reloaded_rgb_image, coord_0, coord_13, ring_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_13, coord_14, ring_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_14, coord_15, ring_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_15, coord_16, ring_finger_color, thickness)
+
+                # Draw pinky
+                pinky_finger_color = (0,255,0) # lime (light green)
+                cv2.line(reloaded_rgb_image, coord_0, coord_17, pinky_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_17, coord_18, pinky_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_18, coord_19, pinky_finger_color, thickness)
+                cv2.line(reloaded_rgb_image, coord_19, coord_20, pinky_finger_color, thickness)
+
+                cv2.imwrite(img_hand_skeleton_path, reloaded_rgb_image)
+                # ----------------------------------------------------------------------------------------------------------
 
                 # Render RGB obj only
                 obj_img_path = os.path.join(self.folder_rgb_obj,
@@ -292,9 +383,9 @@ class GraspRenderer:
                     tmp_files.append(hand_img_path)
 
                 # Remove temporary files
-                for filepath in tmp_files:
-                    if os.path.isfile(filepath):
-                        os.remove(filepath)
+                #for filepath in tmp_files:
+                #    if os.path.isfile(filepath):
+                #        os.remove(filepath)
 
                 # Delete object
                 self.scene.clearUnused()
