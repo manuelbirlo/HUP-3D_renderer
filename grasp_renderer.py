@@ -256,8 +256,7 @@ class GraspRenderer:
                 reloaded_rgb_image = cv2.imread(img_path) 
     
                 radius = 2
-                color = ()
-   
+                
                 # Blue color in BGR 
                 color = (0, 0, 255) 
    
@@ -265,9 +264,12 @@ class GraspRenderer:
                 thickness = 1
                 
                 hand_info_coords_2d = hand_info['coords_2d']
-                print("******* HAND COORDS 2D: {}".format(hand_info_coords_2d))
-                #print("***************** HAND INFO KEYS: {} *********".format(hand_info.keys()))
-
+                print("******* HAND COORDS 3D: {}".format(hand_info['coords_3d']))
+                print("***************** META INFO KEYS: {} *********".format(meta_infos.keys()))
+                # obj_info contains obj_path and obj_scale
+                print("------------------------ affine trans.: {}".format(meta_infos['affine_transformF']))
+                
+                
                 for coords in hand_info_coords_2d:
                     current_coords = (int(coords[0]), int(coords[1]))
                     #print("****** CURRENT COORDS: {}, {}".format(current_coords[0], current_coords[1]))
@@ -363,6 +365,7 @@ class GraspRenderer:
                                                             tmp_segm_hand_path, frame_prefix)
                 meta_infos['obj_visibility_ratio'] = obj_ratio
 
+                keep_render = True 
                 if keep_render:
                     # Render depth image
                     depth_infos = self.renderDepth(tmp_depth, tmp_hand_depth, tmp_obj_depth, frame_prefix)
