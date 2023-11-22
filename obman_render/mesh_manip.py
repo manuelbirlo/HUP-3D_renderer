@@ -164,7 +164,7 @@ def egocentric_viewpoint(global_joint_positions, head_idx=15, hand_idx=40, pelvi
     if (rotHeadToHand[2] > 0.0):
         rotX180 = Rotation.from_matrix([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]]).as_matrix()
         rot = np.matmul(rotX180, rot)
-        rotHeadToHand = np.dot(rotX180, rotHeadToHand)
+        rotHeadToHand = np.dot(rotX180, rotHeadToHand) # [Manuel] rotHeadToHand istn't used anymore after this line, only 'rot' is being used.
 
     # Rotation around Z axis (spine should be parallel to negative Y axis, so rotate it into YZ plane)
     headToPelvis = pelvis - head
@@ -186,7 +186,8 @@ def egocentric_viewpoint(global_joint_positions, head_idx=15, hand_idx=40, pelvi
     #print("Norm: {}".format(np.linalg.norm(axisangle)))
 
     if debug_data_file_writer is not None:
-       debug_data_file_writer.writerow([datetime.datetime.now(), None, None, headToHand, rotHeadToHand, headToPelvis, rotHeadToPelvis, axisangle, None, None])
+        debug_data_file_writer.writerow([axisangle[0], axisangle[1], axisangle[2]])
+    #   debug_data_file_writer.writerow([datetime.datetime.now(), None, None, headToHand, rotHeadToHand, headToPelvis, rotHeadToPelvis, axisangle, None, None])
        
     return axisangle
 
@@ -199,6 +200,7 @@ def randomized_verts(model,
                      hand_pose_offset=3,
                      z_min=0.5,
                      z_max=0.8,
+                     z_distance = 0.8,
                      head_idx=15,
                      shape_val=2.0,
                      random_shape=False,
@@ -266,9 +268,11 @@ def randomized_verts(model,
     _, global_joint_positions = global_rigid_transformation(randpose, model.J, model.kintree_table, xp=chumpy)
     global_joint_positions = np.vstack([g[:3, 3] for g in global_joint_positions])
 
+    #body_rot = True # TO BE REMOVED, JUST FOR TESTING!!!
+
     # Removed hand noise
-    #noiseFactor = 0.02
-    #handNoise = noiseFactor * 2.0 * (np.random.random(size=(3, 1)) - 0.5)
+    noiseFactor = 0.02
+    handNoise = noiseFactor * 2.0 * (np.random.random(size=(3, 1)) - 0.5)
     # Don't add body rotation
     if body_rot:
         randpose[0:3] = egocentric_viewpoint(global_joint_positions, handNoise=handNoise, debug_data_file_writer=debug_data_file_writer)
@@ -321,10 +325,10 @@ def randomized_verts(model,
     # rand_z try two setting rand_z = z_min and rand_z = z_max
     #rand_z = random.uniform(z_min, z_max)
     # rand_z is now hardcoded to z_max
-    rand_z = z_max
+    rand_z = z_distance #z_max
 
-    if debug_data_file_writer is not None:
-         debug_data_file_writer.writerow([datetime.datetime.now(), hand_head_dist, rand_z, None, None, None, None, None, debug_left_hand_pose, debug_right_hand_pose])
+    #if debug_data_file_writer is not None:
+    #     debug_data_file_writer.writerow([datetime.datetime.now(), hand_head_dist, rand_z, None, None, None, None, None, debug_left_hand_pose, debug_right_hand_pose])
 
     trans = np.array([model.J_transformed[center_idx, :].r[i] for i in range(3)])
     # Avoid adding any noise for hand translation in u/v coordinates

@@ -187,7 +187,7 @@ class BlenderScene:
         return tmp_segm_path
 
 
-    def setHandAndObjectPose(self, grasp, z_min, z_max, cam_view, debug_data_file_writer = None):
+    def setHandAndObjectPose(self, grasp, z_min, z_max, cam_view, z_distance, debug_data_file_writer = None):
         assert len(cam_view) == 3, "Input tuple 'cam_view' does not have required length 3"
 
         # Set hand pose
@@ -206,6 +206,7 @@ class BlenderScene:
             ncomps=2 * self.ncomps,
             z_min=z_min,
             z_max=z_max,
+            z_distance=z_distance,
             side='right',
             hand_pose=grasp['pca_pose'],
             hand_pose_offset=0,
