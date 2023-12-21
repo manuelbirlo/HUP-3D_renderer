@@ -277,8 +277,10 @@ def randomized_verts(model,
     if body_rot:
         randpose[0:3] = egocentric_viewpoint(global_joint_positions, handNoise=handNoise, debug_data_file_writer=debug_data_file_writer)
     else:
-        randpose[0:3] = [cam_viewpoint_x, cam_viewpoint_y, cam_viewpoint_z] #[-np.pi/2, 0, 0]
-
+        rot_sphere = Rotation.from_euler('XYZ', [cam_viewpoint_x, cam_viewpoint_y, cam_viewpoint_z], degrees=False).as_matrix()
+        randpose[0:3] = Rotation.from_matrix(rot_sphere).as_rotvec()
+        #randpose[0:3] = [cam_viewpoint_x, cam_viewpoint_y, cam_viewpoint_z] #[-np.pi/2, 0, 0]
+       
     hand_comps = int(ncomps / 2)
     hand_idx = 66
 

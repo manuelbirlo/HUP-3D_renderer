@@ -41,7 +41,7 @@ class BlenderScene:
         # Get camera info
         self.camera_name = 'Camera'
         camutils.set_camera(self.camera_name)
-        camutils.check_camera(self.camera_name)
+        camutils.check_camera(self.camera_name) 
         self.cam_calib = np.array(camutils.get_calib_matrix(self.camera_name))
         self.cam_extr = np.array(camutils.get_extrinsic(self.camera_name))
 
@@ -216,7 +216,7 @@ class BlenderScene:
             cam_viewpoint_y=cam_view[1],
             cam_viewpoint_z=cam_view[2],
             debug_data_file_writer=debug_data_file_writer)
-        
+
         mesh_manip.alter_mesh(self.smplh_obj, smplh_verts.tolist())
 
         hand_info = coordutils.get_hand_body_info(
