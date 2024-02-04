@@ -74,8 +74,7 @@ def load_body_data(smpl_data, gender='female', idx=0, n_sh_bshapes=10):
     return (cmu_parms, fshapes, name)
 
 
-def load_smpl(template='assets/models/basicModel_{}_lbs_10_207_0_v1.0.2.fbx',
-              gender='f'):
+def load_smpl(template='assets/models/basicModel_{}_lbs_10_207_0_v1.0.2.fbx', gender='f'):
     """
     Loads smpl model, deleted armature and renames mesh to 'Body'
     """
@@ -200,7 +199,7 @@ def randomized_verts(model,
                      hand_pose_offset=3,
                      z_min=0.5,
                      z_max=0.8,
-                     z_distance = 0.8,
+                     z_distance = 0.4,
                      head_idx=15,
                      shape_val=2.0,
                      random_shape=False,
