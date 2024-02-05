@@ -88,7 +88,6 @@ def get_tips(verts, side='right'):
     tips = verts[np.array(tip_idxs)]
     return tips
 
-
 def get_rigid_transform(A, B):
     cenA = np.mean(A, 0)  # 3
     cenB = np.mean(B, 0)  # 3
@@ -102,6 +101,8 @@ def get_rigid_transform(A, B):
         U[:, 2] = -U[:, 2]
         R = np.dot(U, V.transpose())
     t = np.dot(-R, cenA.transpose()) + cenB.transpose()
+
+    # Returns a rotation matrix 'R' and a translation vector 't'.
     return R, t
 
 
@@ -110,9 +111,7 @@ def get_rigid_transform_posed_mano(posed_model, mano_model):
                                           posed_model.J_transformed[37:].r)
 
     # Concatenate rotation and translation
-    rigid_transform = np.asarray(
-        np.concatenate((rigid_transform[0], np.matrix(rigid_transform[1]).T),
-                       axis=1))
-    rigid_transform = np.concatenate((rigid_transform, np.array([[0, 0, 0,
-                                                                  1]])))
+    rigid_transform = np.asarray(np.concatenate((rigid_transform[0], np.matrix(rigid_transform[1]).T), axis=1))
+    
+    rigid_transform = np.concatenate((rigid_transform, np.array([[0, 0, 0, 1]])))
     return rigid_transform
