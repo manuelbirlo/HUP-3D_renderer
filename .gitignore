@@ -12,6 +12,7 @@ core.*
 *.txt
 *.html
 *.exr
+*.csv
 
 # Ignore everything related to the Blender installation
 blender-2.82a-linux64
