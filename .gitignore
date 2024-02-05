@@ -7,8 +7,18 @@ core.*
 *.blend
 *.mtl
 *.obj
-
+*.pkl
 *.sw*
+*.txt
+*.html
+*.exr
+
+# Ignore everything related to the Blender installation
+blender-2.82a-linux64
+
+*.zip
+*.tar
+*.xz
 
 dist-packages/
 
@@ -38,6 +48,8 @@ assets/textures/bodywithands
 assets/textures/bodywithands.zip
 assets/grasps/shapenet_grasps
 assets/SURREAL/smpl_data
+
+assets/mano_v1_2
 
 misc/
 data/
