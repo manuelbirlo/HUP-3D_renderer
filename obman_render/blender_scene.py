@@ -17,6 +17,9 @@ from serialization import load_model
 from smpl_handpca_wrapper import load_model as smplh_load_model
 from mathutils import Matrix
 
+from mathutils import Matrix, Vector, Quaternion
+from scipy.spatial.transform import Rotation as R
+
 class BlenderScene:
 
     def __init__(self, render_body=True, ambiant_mean=0.7, ambiant_add=0.5):
@@ -186,17 +189,47 @@ class BlenderScene:
         bpy.ops.render.render(write_still=True)
         return tmp_segm_path
 
+    def apply_additional_rotation(self, obj, rotmat):
+        # Convert the rotmat list to a Blender Matrix
+        rotation_matrix = Matrix(rotmat)
+
+        # Ensure it's a 4x4 matrix by appending a [0, 0, 0, 1] row, if needed
+        if len(rotation_matrix) < 4:
+            rotation_matrix.resize_4x4()
+
+        # Apply the rotation to the object
+        obj.matrix_world = rotation_matrix @ obj.matrix_world
+
+    def apply_rotation_to_mesh(self, mesh, rotmat):
+        # Convert the rotation matrix to a Blender Matrix object
+        rot_matrix_blender = Matrix(rotmat)
+        
+        # Ensure it's a 4x4 matrix by appending a [0, 0, 0, 1] row, if needed
+        if len(rot_matrix_blender) < 4:
+            rot_matrix_blender.resize_4x4()
+
+        # Apply the rotation to each vertex of the mesh
+        for vert in mesh.vertices:
+            vert.co = rot_matrix_blender @ vert.co
 
     def setHandAndObjectPose(self, grasp, z_min, z_max, cam_view, z_distance, debug_data_file_writer = None):
         assert len(cam_view) == 3, "Input tuple 'cam_view' does not have required length 3"
 
         # Set hand pose
         if 'mano_trans' in grasp:
+            print("_____________ if 'mano_trans' in grasp:_________________")
             self.mano_model.trans[:] = [val for val in grasp['mano_trans']]
         else:
+            print("_____________ else 'mano_trans' in grasp:_________________")
+
             self.mano_model.trans[:] = grasp['hand_trans']
-        self.mano_model.pose[:] = grasp['hand_pose']
+            #self.mano_model.trans[:] = np.array(grasp['hand_trans']) #grasp['hand_trans']
+
+            print("______grasp['hand_trans']____{}".format(grasp['hand_trans']))
+            print("______self.mano_model.trans____{}".format(self.mano_model.trans))
+        self.mano_model.pose[:] = grasp['hand_pose'] # passing 48 values of mano_pose
         mesh_manip.alter_mesh(self.mano_obj, self.mano_model.r.tolist())
+
 
         # Center mesh on center_idx
         # You can even pass random_shape and random_pose =False
@@ -208,7 +241,7 @@ class BlenderScene:
             z_max=z_max,
             z_distance=z_distance,
             side='right',
-            hand_pose=grasp['pca_pose'],
+            hand_pose= grasp['pca_pose'],
             hand_pose_offset=0,
             random_shape=False,
             random_pose=False,
@@ -232,15 +265,83 @@ class BlenderScene:
         meta_infos['cam_calib'] = self.cam_calib
 
         # Apply transform to object
-        rigid_transform = coordutils.get_rigid_transform_posed_mano(
-            posed_model, self.mano_model)
+        rigid_transform = coordutils.get_rigid_transform_posed_mano(posed_model, self.mano_model)
         self.mano_obj.matrix_world = Matrix(rigid_transform)
-
+        
         obj_transform = rigid_transform.dot(self.obj.matrix_world)
         self.obj.matrix_world = Matrix(obj_transform)
 
+
+        """
+        additional_rotmat = [
+            [0.9999619126319885, -0.00013189652236178517, -0.008725538849830627, 0],
+            [0.0, 0.9998857975006104, -0.015114419162273407, 0],
+            [0.008726535364985466, 0.015113843604922295, 0.9998477101325989, 0],
+            [0, 0, 0, 1]  # homogeneous coordinate for 4x4 matrix
+        ]
+            
+        # Apply rotmat to the hand mesh vertices
+        #self.apply_rotation_to_mesh(self.mano_obj.data, additional_rotmat)
+
+        # Calculate the transformation for the object
+        obj_transform = rigid_transform @ self.obj.matrix_world
+        
+        # Apply rotmat to the object mesh vertices
+        self.apply_rotation_to_mesh(self.obj.data, additional_rotmat)
+
+        # Update the world transformation of the object
+        self.obj.matrix_world = Matrix(obj_transform)
+        """
+
+
+
+        # self.obj.matrix_world is an identity matrix at this point because a value hasn't been assigned to it yet.
+        #obj_transform = rigid_transform.dot(self.obj.matrix_world)
+        #self.obj.matrix_world = Matrix(obj_transform)
+
+
+        # --------------------------------------------------------------
+        # Apply rotmat to the hand mesh vertices
+        #self.apply_rotation_to_mesh(self.mano_obj.data, grasp['rotmat'])
+        # --------------------------------------------------------------
+
         # Save object info
         meta_infos['affine_transform'] = obj_transform.astype(np.float32)
+        """
+        # Load the additional rotation matrix (rotmat)
+      
+        additional_rotmat = [
+            [0.9999619126319885, -0.00013189652236178517, -0.008725538849830627, 0],
+            [0.0, 0.9998857975006104, -0.015114419162273407, 0],
+            [0.008726535364985466, 0.015113843604922295, 0.9998477101325989, 0],
+            [0, 0, 0, 1]  # homogeneous coordinate for 4x4 matrix
+        ]
+       
+        # Apply the additional rotation to obj_transform
+        # Convert your NumPy array (additional_rotation_matrix) to a Blender Matrix
+        additional_rotation_matrix_blender = Matrix(additional_rotmat)
+ 
+        # Convert obj_transform (if it's a numpy.ndarray) to a Blender Matrix
+        if isinstance(obj_transform, np.ndarray):
+            obj_transform = Matrix(obj_transform.tolist())
+ 
+        # Now multiply the Blender Matrices
+        obj_transform = additional_rotation_matrix_blender @ obj_transform
+ 
+        # Apply the final transformation to the tool object
+        self.obj.matrix_world = obj_transform
+
+        #self.obj.matrix_world = Matrix(obj_transform)
+        # After applying all transformations to obj_transform
+        # Convert Blender Matrix to numpy array for storing in meta_infos
+        obj_transform_np = np.array(obj_transform)  # Converts the Blender Matrix to a NumPy array
+
+        # Save object info
+        meta_infos['affine_transform'] = obj_transform_np.astype(np.float32)
+        # Save object info
+        #meta_infos['affine_transform'] = obj_transform.astype(np.float32)
+        """
+
 
         return meta_infos
 
