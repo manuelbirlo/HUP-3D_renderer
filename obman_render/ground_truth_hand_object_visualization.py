@@ -179,19 +179,20 @@ class GroundTruthVisualization:
 
     def visualize_object_vertices_and_bounding_box(self, metainfo, ax):
         affine_transform = metainfo["affine_transform"]
+
         cam_calib = metainfo['cam_calib']
         obj_path = metainfo['obj_path']
         cam_extr = metainfo['cam_extr']
 
-        object_verts_2d = self.get_objverts2d(cam_calib, obj_path, cam_extr, affine_transform)
+        #object_verts_2d = self.get_objverts2d(cam_calib, obj_path, cam_extr, affine_transform)
         object_corners_2d = self.get_objcorners2d(cam_calib, obj_path, cam_extr, affine_transform)
 
         # visualize sparse object vertices (every 100th vertex due to runtime performance)
         #object_verts_2d = [object_verts_2d[index] for index in range(1, len(object_verts_2d), 100)]
-        x_values=[i[0] for i in object_verts_2d]
-        y_values=[i[1] for i in object_verts_2d]
-
-        ax.scatter(x_values, y_values, 1, "b", alpha=0.02)
+        #x_values=[i[0] for i in object_verts_2d]
+        #y_values=[i[1] for i in object_verts_2d]
+        
+        #ax.scatter(x_values, y_values, 1, "b", alpha=0.02)
 
         self.visualize_joints_2d(
             ax,
