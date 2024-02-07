@@ -220,13 +220,47 @@ class BlenderScene:
             print("_____________ if 'mano_trans' in grasp:_________________")
             self.mano_model.trans[:] = [val for val in grasp['mano_trans']]
         else:
-            print("_____________ else 'mano_trans' in grasp:_________________")
-
             self.mano_model.trans[:] = grasp['hand_trans']
+            
+            # Adjust the probe location (x = 0, y = 0, z = z of hand_trans)
+            #self.obj.location = (0, 0, grasp['hand_trans'][2])
+            
             #self.mano_model.trans[:] = np.array(grasp['hand_trans']) #grasp['hand_trans']
 
             print("______grasp['hand_trans']____{}".format(grasp['hand_trans']))
             print("______self.mano_model.trans____{}".format(self.mano_model.trans))
+
+
+        """
+        # Given rotation matrix. An exmple rotmat only!
+        rotmat = np.array([
+             [
+                0.9999954104423523,
+                -5.209000300965272e-05,
+                -0.003030280116945505
+            ],
+            [
+                0.0,
+                0.9998522996902466,
+                -0.017187291756272316
+            ],
+            [
+                0.0030307278502732515,
+                0.0171872116625309,
+                0.9998477101325989
+            ]
+        ])
+        """
+        # Define the local translation vector (assuming translation along the z-axis)
+        local_translation = np.array([0, 0, -grasp['hand_trans'][1]])
+
+        # Transform the local translation vector using the rotation matrix
+        global_translation = np.dot(rotmat, local_translation)
+
+        # Apply the transformed translation vector to the object's global location
+        #self.obj.location += Vector(global_translation)
+        self.obj.location += Vector(local_translation)
+
         self.mano_model.pose[:] = grasp['hand_pose'] # passing 48 values of mano_pose
         mesh_manip.alter_mesh(self.mano_obj, self.mano_model.r.tolist())
 
@@ -271,7 +305,13 @@ class BlenderScene:
         obj_transform = rigid_transform.dot(self.obj.matrix_world)
         self.obj.matrix_world = Matrix(obj_transform)
 
+        # desired_world_translation = Vector((0, 0, grasp['hand_trans'][2]))
 
+        # Apply the translation after considering the object's rotation
+        #self.apply_translation_after_rotation(self.obj, desired_world_translation)
+
+        print("______________________________________ object location after rigid transform:_______{}_______".format(self.obj.location))
+        print("______________________________________ hand location after rigid transform:_______{}_______".format(self.mano_obj.location))
         """
         additional_rotmat = [
             [0.9999619126319885, -0.00013189652236178517, -0.008725538849830627, 0],
