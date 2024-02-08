@@ -144,6 +144,8 @@ class GraspRenderer:
     def loadObjectTextures(self, path):
         #TODO is a split parameter necessary?
         self.obj_textures = [os.path.join(path, f) for f in os.listdir(path)]
+
+        print("_______________________object texture: {}".format(self.obj_textures))
         print('Got {} object textures'.format(len(self.obj_textures)))
 
 
@@ -196,7 +198,10 @@ class GraspRenderer:
                         cam_view_y = cam_view[1]
                         cam_view_z = cam_view[2]
             
-                        frame_prefix = "{}_{}_grasp{:03d}_{:04d}_cam_view_x{:3f}_y{:3f}_z{:3f}_z_dist_{}".format(latitude_floor, model_name, grasp_idx + 1, frame_idx + 1, np.degrees(cam_view_x), np.degrees(cam_view_y), np.degrees(cam_view_z), z_dist)
+                        #frame_prefix = "{}_{}_grasp{:03d}_{:04d}_cam_view_x{:3f}_y{:3f}_z{:3f}_z_dist_{}".format(latitude_floor, model_name, grasp_idx + 1, frame_idx + 1, np.degrees(cam_view_x), np.degrees(cam_view_y), np.degrees(cam_view_z), z_dist)
+                        frame_prefix = "{}_grasp_{:d}_frame_{:d}_latitude_floor_{:d}_cam_view_x{:d}_y{:d}_z{:d}_z_dist_{:1f}".format(
+                                    model_name, grasp_idx + 1, frame_idx + 1, int(latitude_floor),
+                                    int(np.degrees(cam_view_x)), int(np.degrees(cam_view_y)), int(np.degrees(cam_view_z)), z_dist)
 
                         # Check if frame has already been rendered
                         if "{}.pkl".format(frame_prefix) in rendered_frames:
@@ -208,9 +213,7 @@ class GraspRenderer:
 
                         # Load object
                         obj_info = self.scene.loadObject(obj_path)
-                        #obj_texture_info, obj_osl_path, obj_oso_path = self.scene.addObjectTexture(obj_path,
-                        #                                                                           obj_textures=self.obj_textures,
-                        #                                                                           random_obj_textures=False)
+                        #obj_texture_info, obj_osl_path, obj_oso_path = self.scene.addObjectTexture(obj_path, obj_textures=self.obj_textures, random_obj_textures=False)
                         self.scene.setToolMaterialPassIndices()
                         # Keep track of temporary files to delete at the end
                         tmp_files = []
@@ -318,32 +321,12 @@ class GraspRenderer:
                         #reloaded_rgb_image = cv2.imread(img_path) 
                         reloaded_rgb_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
                     
-                        print("----------RELOADED RGB IMAGE (before): {}".format(reloaded_rgb_image))
-
                         fig, ax = plt.subplots(1,1)
 
                         ax.axis("off")
                         self.gt_visualization.visualize_hand_skeleton(meta_infos, ax)
                         self.gt_visualization.visualize_object_vertices_and_bounding_box(meta_infos, ax)
-                        print("----------RELOADED RGB IMAGE (after): {}".format(reloaded_rgb_image))
-
-                        #------------------
-                        #cam_calib = meta_infos['cam_calib']
-                        #cam_extr = meta_infos['cam_extr']
-
-                        #print("---- --- ---- cam_view_coordinates {} {} {}------ ".format(cam_view_x, cam_view_y, cam_view_z))
-                        #projected_2D_camera_view = self.gt_visualization.perspective_projection(cam_calib, cam_extr, np.array([cam_view_x, cam_view_y, cam_view_z]))
-
-                        #radius = 20
-                        #color = (0, 255, 0) # green
-                        #thickness = 2
-
-                        #print("----coordinates: {} {}".format(projected_2D_camera_view[0],projected_2D_camera_view[1]))
-                        #center_coordinates = (int(projected_2D_camera_view[0]), int(projected_2D_camera_view[1]))
-                        #print("----------------- center_coordinates: {} {}".format(center_coordinates[0], center_coordinates[1]))
-
-                        #cv2.circle(reloaded_rgb_image, center_coordinates, radius, color, thickness)
-                        #---------------------
+                        #print("----------RELOADED RGB IMAGE (after): {}".format(reloaded_rgb_image))
 
                         ax.imshow(reloaded_rgb_image)
 
@@ -355,7 +338,7 @@ class GraspRenderer:
                         #    if os.path.isfile(filepath):
                         #        os.remove(filepath)
 
-                        # Delete object
+                        # Delete object.
                         self.scene.clearUnused()
                         self.scene.deleteObject()
                         self.scene.deleteMaterials()
@@ -370,7 +353,7 @@ class GraspRenderer:
 
 
     def renderGraspsInDir(self, grasp_folder, mano_right_path, smpl_model_path, smpl_data_path,
-                          texture_zoom=1, max_grasps_per_object=2, filter_angle=94):
+                          texture_zoom=1, max_grasps_per_object=2, selected_grasps={}, filter_angle=94):
         # Load grasp files
         grasp_files = self.loadGraspFiles(grasp_folder, self.split)
         print("Found {} json grasp files.".format(len(grasp_files)))
@@ -387,9 +370,27 @@ class GraspRenderer:
             #debug_data_file_writer.writerow(["Time", "hand_head_dist", "rand_z", "headToHand", "rotHeadToHand", "headToPelvis", "rotHeadToPelvis", "global_rot_in_axisangle", "debug_left_hand_pose", "debug_right_hand_pose"]) # TO BE DEFINED
 
             for grasp_file in grasp_files:
+                print("_________________________ grasp file {}".format(grasp_file.split('/')[-1]))
                 with open(grasp_file, 'r') as f:
                     grasp_list = json.load(f)
-                grasp_count = len(grasp_list)
+                
+                grasp_file_name = grasp_file.split('/')[-1]
+
+                # Check if 'selected_grasps' is not empty:
+                if selected_grasps:
+                    # Check if file name is in 'selected_grasps':
+                    if grasp_file_name in selected_grasps:
+                        selected_grasp_indices = selected_grasps[grasp_file_name]
+                        print("________________ selected grasp_IDs {}".format(selected_grasp_indices))
+
+                        selected_grasps = [grasp_list[i] for i in selected_grasp_indices if i < len(grasp_list)]
+                        grasp_list = selected_grasps
+                        print("________________ selected grasps {}".format(selected_grasps))
+                        grasp_count = len(selected_grasps)
+                    else:
+                        grasp_count = len(grasp_list)
+      
+                #grasp_count = len(grasp_list)
                 print("Found {} grasps for object {}".format(grasp_count, grasp_file))
 
                 grasps_rendered = 0
@@ -398,10 +399,9 @@ class GraspRenderer:
                         print("Reached maximum of {} grasps for object {}".format(max_grasps_per_object, grasp_file))
                         break
 
-                    if grasp_wrong(grasp, angle=filter_angle):
-                        print("Skipping wrong grasp.")
-                        continue
-
+                    #if grasp_wrong(grasp, angle=filter_angle):
+                    #    print("Skipping wrong grasp.")
+                    #    continue
                     grasp_info = {
                         'obj_path':
                             grasp['body'],
@@ -413,6 +413,8 @@ class GraspRenderer:
                             grasp['mano_pose'],
                         'hand_trans':
                             grasp['mano_trans'][0],
+                        'rotmat':
+                            grasp['rotmat'],
                         'pca_pose':
                             np.array(
                                 grasp['mano_pose'][3:]).dot(inv_hand_pca),
@@ -426,7 +428,7 @@ class GraspRenderer:
                             grasp['volume']
                     }
 
-                    camera_distances_to_render = [0.8]
+                    camera_distances_to_render = [0.4]
 
                     camera_sphere_instance = camera_sphere.CameraSphere(sphere_radius=0.8, circle_radius=0.15)
                     camera_view_angles_per_latitude_floor = camera_sphere_instance.generate_blender_camera_view_angles()
@@ -446,8 +448,8 @@ if __name__ == "__main__":
         "results_root": "datageneration/tmp/",
         "grasp_folder": "assets/grasps/",
         "max_grasps_per_object": 2,
-        "mano_right_path": "assets/models/mano_v1_2/models/MANO_RIGHT.pkl",
-        "smpl_model_path": "assets/models/mano_v1_2/models/SMPLH_female.pkl",
+        "mano_right_path": "assets/mano_v1_2/models/MANO_RIGHT.pkl",
+        "smpl_model_path": "assets/mano_v1_2/models/SMPLH_female.pkl",
         "smpl_data_path": "assets/SURREAL/smpl_data/smpl_data.npz",
         "obj_texture_path": "assets/textures/",
         "backgrounds_path": "assets/backgrounds/",
@@ -458,7 +460,8 @@ if __name__ == "__main__":
         "texture_zoom": 1,
         "render_body": False,
         "split": "train",
-        "max_data_recording_iterations": 50
+        "max_data_recording_iterations": 50,
+        "selected_grasps": {}
     }
 
     json_config = json.loads(recover_json_string)
@@ -482,7 +485,8 @@ if __name__ == "__main__":
                          smpl_model_path=config["smpl_model_path"],
                          smpl_data_path=config["smpl_data_path"],
                          texture_zoom=config["texture_zoom"],
-                         max_grasps_per_object=config["max_grasps_per_object"])
+                         max_grasps_per_object=config["max_grasps_per_object"],
+                         selected_grasps=config["selected_grasps"])
 
     print("Dataset creation complete!")
     exit(0)
