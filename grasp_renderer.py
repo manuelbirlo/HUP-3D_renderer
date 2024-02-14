@@ -7,6 +7,7 @@ import pickle
 import sys
 import csv
 import time
+import scipy.io
 from PIL import Image
 from matplotlib import pyplot as plt
 
@@ -18,19 +19,21 @@ sys.path.insert(0, root)
 from obman_render import (conditions, depthutils, imageutils, blender_scene, ground_truth_hand_object_visualization)
 from obman_render.grasps.grasputils import get_inv_hand_pca, grasp_wrong
 from obman_render.camera_view_sphere import camera_sphere
+from obman_render.grasp_data_conversion import mat_to_json_converter
 
 class GraspRenderer:
 
     def __init__(self, results_root, backgrounds_path, obj_texture_path,
-                 renderings_per_grasp=1, min_obj_ratio=0.4, render_body=False,
+                 min_obj_ratio=0.4, render_body=False,
                  ambiant_mean=0.7, ambiant_add=0.5, z_min=0.3, z_max = 0.5, split="train",
-                 max_data_recording_iterations=50):
+                 max_data_recording_iterations=50,
+                 use_grasps_from_mat_file = False):
         assert split in ["train", "val", "test"], "split parameter has to be either train, val, or test!"
         assert 0.0 <= min_obj_ratio and min_obj_ratio <= 1.0, "min_obj_ratio has to be in [0, 1]!"
 
         self.min_obj_ratio = min_obj_ratio
         self.render_body = render_body
-        self.frames_per_grasp = renderings_per_grasp
+       
         self.z_min = z_min
         self.z_max = z_max
         self.split = split
@@ -42,9 +45,6 @@ class GraspRenderer:
         self.gt_visualization = ground_truth_hand_object_visualization.GroundTruthVisualization(self.scene,
                                                                                                 self.folder_rgb,
                                                                                                 self.folder_rgb_gt_vis)
-
-        #print("filter_angle=" + str(94))
-        print("renderings_per_grasp=" + str(self.frames_per_grasp))
 
         self.loadBackgrounds(backgrounds_path, self.split)
         self.loadBodyTextures(self.split)
@@ -140,6 +140,21 @@ class GraspRenderer:
         grasp_files = [os.path.join(path, grasp_file) for grasp_file in grasp_files if pattern in grasp_file]
         return grasp_files
 
+    def getConvertedMatGraspFiles(self, path):
+        pattern = ".mat"
+        grasp_files = os.listdir(path)
+        mat_grasp_files = [os.path.join(path, grasp_file) for grasp_file in grasp_files if pattern in grasp_file]
+
+        mat_files_dict = {} 
+
+        for mat_grasp_file in mat_grasp_files:
+            mat = scipy.io.loadmat(mat_grasp_file)
+            mat_json = mat_to_json_converter.convert_mat_to_json(mat)
+            filename = os.path.basename(mat_grasp_file) 
+            mat_files_dict[filename] = mat_json 
+
+        return mat_files_dict
+
 
     def loadObjectTextures(self, path):
         #TODO is a split parameter necessary?
@@ -186,178 +201,186 @@ class GraspRenderer:
         rendered_frames = os.listdir(self.folder_meta)
 
         frame_idx = 0
-        while (frame_idx < self.frames_per_grasp):
-           
-            for z_dist in camera_distances_to_render:
+          
+        for z_dist in camera_distances_to_render:
 
-                for latitude_floor, cam_views in camera_views_to_render.items(): 
+            for latitude_floor, cam_views in camera_views_to_render.items(): 
 
-                    for cam_view in cam_views:
-                            
-                        cam_view_x = cam_view[0]
-                        cam_view_y = cam_view[1]
-                        cam_view_z = cam_view[2]
-            
-                        #frame_prefix = "{}_{}_grasp{:03d}_{:04d}_cam_view_x{:3f}_y{:3f}_z{:3f}_z_dist_{}".format(latitude_floor, model_name, grasp_idx + 1, frame_idx + 1, np.degrees(cam_view_x), np.degrees(cam_view_y), np.degrees(cam_view_z), z_dist)
-                        frame_prefix = "{}_grasp_{:d}_frame_{:d}_latitude_floor_{:d}_cam_view_x{:d}_y{:d}_z{:d}_z_dist_{:1f}".format(
-                                    model_name, grasp_idx + 1, frame_idx + 1, int(latitude_floor),
-                                    int(np.degrees(cam_view_x)), int(np.degrees(cam_view_y)), int(np.degrees(cam_view_z)), z_dist)
-
-                        # Check if frame has already been rendered
-                        if "{}.pkl".format(frame_prefix) in rendered_frames:
-                            print("Found rendered frame {}, continuing.".format(frame_prefix))
-                            frame_idx += 1
-                            continue
-                        else:
-                            print("\nWorking on {}".format(frame_prefix))
-
-                        # Load object
-                        obj_info = self.scene.loadObject(obj_path)
-                        #obj_texture_info, obj_osl_path, obj_oso_path = self.scene.addObjectTexture(obj_path, obj_textures=self.obj_textures, random_obj_textures=False)
-                        self.scene.setToolMaterialPassIndices()
-                        # Keep track of temporary files to delete at the end
-                        tmp_files = []
-                        #tmp_files.append(obj_osl_path)
-                        #tmp_files.append(obj_oso_path)
-
-                        # Keep track of meta data
-                        meta_infos = {}
-                        meta_infos.update(obj_info)
-                        #meta_infos.update(obj_texture_info)
-
-                        # Set hand and object pose
-                        hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, z_dist, debug_data_file_writer)
-                        meta_infos.update(hand_info)
-
-                        # Save grasp info
-                        for label in [
-                            'obj_path', 'pca_pose', 'grasp_quality',
-                            'grasp_epsilon', 'grasp_volume', 'hand_trans',
-                            'hand_global_rot', 'hand_pose'
-                        ]:
-                            meta_infos[label] = grasp[label]
-
-                        # Randomly pick background
-                        bg_path = random.choice(self.backgrounds)
-                        meta_infos['bg_path'] = bg_path
-
-                        # Randomly pick clothing texture
-                        #print("++++++++++++++++++++= self.body_textures: {}".format(self.body_textures))
-                        tex_path = random.choice(self.body_textures)
-                        meta_infos['body_tex'] = tex_path
-                        self.scene.setSMPLTexture(tex_path)
-                        self.scene.setHandTextures()
-
-                        # Set lighting conditions
-                        lighting_info = self.scene.setLighting()
-                        meta_infos.update(lighting_info)
-
-                        # Render RGB
-                        img_path = os.path.join(self.folder_rgb, '{}.jpg'.format(frame_prefix))
-                        depth_path = os.path.join(self.folder_depth, frame_prefix)
-                        tmp_depth = depth_path + '{:04d}.exr'.format(1)
-                        tmp_segm_path = self.scene.renderRGB(img_path, bg_path, depth_path, self.folder_temp_segm)
-                        tmp_files.append(tmp_segm_path)
-                        tmp_files.append(tmp_depth)
-
-                        # Render RGB obj only
-                        obj_img_path = os.path.join(self.folder_rgb_obj,
-                                                    '{}.jpg'.format(frame_prefix))
-                        obj_depth_path = os.path.join(self.folder_depth_obj, frame_prefix)
-                        tmp_obj_depth = obj_depth_path + '{:04d}.exr'.format(1)
-                        tmp_segm_obj_path = self.scene.renderRGB(obj_img_path, bg_path, obj_depth_path,
-                                                                self.folder_temp_segm, hide_smplh=True)
-                        tmp_files.append(tmp_segm_obj_path)
-                        tmp_files.append(tmp_obj_depth)
-
-                        # Render RGB hand only
-                        hand_img_path = os.path.join(self.folder_rgb_hand,
-                                                    '{}.jpg'.format(frame_prefix))
-                        hand_depth_path = os.path.join(self.folder_depth_hand, frame_prefix)
-                        tmp_hand_depth = hand_depth_path + '{:04d}.exr'.format(1)
-                        tmp_segm_hand_path = self.scene.renderRGB(hand_img_path, bg_path, hand_depth_path,
-                                                                self.folder_temp_segm, hide_obj=True)
-                        tmp_files.append(tmp_segm_hand_path)
-                        tmp_files.append(tmp_hand_depth)
-
-                        # Check camera pose again (not sure why?) - to initialise to unity matrix 
-                        # so that the orientations are applied just on the hand/object/body/head
-                        # Hard code back the initial values
-                        self.scene.checkCamera()
-
-                        keep_render, obj_ratio = self.createConcatSegm(tmp_segm_path, tmp_segm_obj_path,
-                                                                    tmp_segm_hand_path, frame_prefix)
-                        meta_infos['obj_visibility_ratio'] = obj_ratio
-
-                        keep_render = True 
-                        if keep_render:
-                            # Render depth image
-                            depth_infos = self.renderDepth(tmp_depth, tmp_hand_depth, tmp_obj_depth, frame_prefix)
-                            meta_infos.update(depth_infos)
-
-                            # Save meta
-                            meta_path = os.path.join(self.folder_meta,
-                                                        '{}.pkl'.format(frame_prefix))
-
-                            with open(meta_path, 'wb') as meta_f:
-                                pickle.dump(meta_infos, meta_f)
-
-                            frame_idx += 1
-                        else:
-                            print("Discarding rendered image. frame_idx: {:04d}".format(frame_idx + 1))
-                            tmp_files.append(img_path)
-                            tmp_files.append(obj_img_path)
-                            tmp_files.append(hand_img_path)
-
-                        # Render ground truth image -----------------------------------------------
-
-                        # ----------------------------------------------------------------------------------------------------------
-                        # Render RGB with hand skeleton
-                        img_hand_skeleton_path = os.path.join(self.folder_rgb_gt_vis, '{}.jpg'.format(frame_prefix))
-
-                        # Return values of renderRGB(...) are not needed in this case
-                        #self.scene.renderRGB(img_hand_skeleton_path, bg_path, depth_path, self.folder_temp_segm)
-
-                        #reloaded_rgb_image = cv2.imread(img_path) 
-                        reloaded_rgb_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
-                    
-                        fig, ax = plt.subplots(1,1)
-
-                        ax.axis("off")
-                        self.gt_visualization.visualize_hand_skeleton(meta_infos, ax)
-                        self.gt_visualization.visualize_object_vertices_and_bounding_box(meta_infos, ax)
-                        #print("----------RELOADED RGB IMAGE (after): {}".format(reloaded_rgb_image))
-
-                        ax.imshow(reloaded_rgb_image)
-
-                        fig.savefig(img_hand_skeleton_path[:-3]+"png")
+                for cam_view in cam_views:
                         
-                        # --------------------------------------------------------------------------
-                        # Remove temporary files
-                        #for filepath in tmp_files:
-                        #    if os.path.isfile(filepath):
-                        #        os.remove(filepath)
+                    cam_view_x = cam_view[0]
+                    cam_view_y = cam_view[1]
+                    cam_view_z = cam_view[2]
+        
+                    #frame_prefix = "{}_{}_grasp{:03d}_{:04d}_cam_view_x{:3f}_y{:3f}_z{:3f}_z_dist_{}".format(latitude_floor, model_name, grasp_idx + 1, frame_idx + 1, np.degrees(cam_view_x), np.degrees(cam_view_y), np.degrees(cam_view_z), z_dist)
+                    frame_prefix = "{}_grasp_{:d}_frame_{:d}_latitude_floor_{:d}_cam_view_x{:d}_y{:d}_z{:d}_z_dist_{:1f}".format(
+                                model_name, grasp_idx + 1, frame_idx + 1, int(latitude_floor),
+                                int(np.degrees(cam_view_x)), int(np.degrees(cam_view_y)), int(np.degrees(cam_view_z)), z_dist)
 
-                        # Delete object.
-                        self.scene.clearUnused()
-                        self.scene.deleteObject()
-                        self.scene.deleteMaterials()
+                    # Check if frame has already been rendered
+                    if "{}.pkl".format(frame_prefix) in rendered_frames:
+                        print("Found rendered frame {}, continuing.".format(frame_prefix))
+                        frame_idx += 1
+                        continue
+                    else:
+                        print("\nWorking on {}".format(frame_prefix))
 
-                        self.current_data_recording_iterations += 1
-                        print("------ Updated iteration counter to {} / {} ------".format(self.current_data_recording_iterations, self.max_data_recording_iterations))
+                    # Load object
+                    obj_info = self.scene.loadObject(obj_path)
+                    #obj_texture_info, obj_osl_path, obj_oso_path = self.scene.addObjectTexture(obj_path, obj_textures=self.obj_textures, random_obj_textures=False)
+                    self.scene.setToolMaterialPassIndices()
+                    # Keep track of temporary files to delete at the end
+                    tmp_files = []
+                    #tmp_files.append(obj_osl_path)
+                    #tmp_files.append(obj_oso_path)
 
-                        #if (self.current_data_recording_iterations >= self.max_data_recording_iterations):
-                            # Exit application if data recording iterations exceeded defined threshold.
-                        #    print("----- Exit program after {} iterations -----".format(self.max_data_recording_iterations))  
-                        #    sys.exit(0)
+                    # Keep track of meta data
+                    meta_infos = {}
+                    meta_infos.update(obj_info)
+                    #meta_infos.update(obj_texture_info)
+
+                    # Set hand and object pose
+                    hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, z_dist, debug_data_file_writer)
+                    meta_infos.update(hand_info)
+
+                    # Save grasp info
+                    for label in [
+                        'obj_path', 'pca_pose', 'grasp_quality',
+                        'grasp_epsilon', 'grasp_volume', 'hand_trans',
+                        'hand_global_rot', 'hand_pose'
+                    ]:
+                        meta_infos[label] = grasp[label]
+
+                    # Randomly pick background
+                    bg_path = random.choice(self.backgrounds)
+                    meta_infos['bg_path'] = bg_path
+
+                    # Randomly pick clothing texture
+                    #print("++++++++++++++++++++= self.body_textures: {}".format(self.body_textures))
+                    tex_path = random.choice(self.body_textures)
+                    meta_infos['body_tex'] = tex_path
+                    self.scene.setSMPLTexture(tex_path)
+                    self.scene.setHandTextures()
+
+                    # Set lighting conditions
+                    lighting_info = self.scene.setLighting()
+                    meta_infos.update(lighting_info)
+
+                    # Render RGB
+                    img_path = os.path.join(self.folder_rgb, '{}.jpg'.format(frame_prefix))
+                    depth_path = os.path.join(self.folder_depth, frame_prefix)
+                    tmp_depth = depth_path + '{:04d}.exr'.format(1)
+                    tmp_segm_path = self.scene.renderRGB(img_path, bg_path, depth_path, self.folder_temp_segm)
+                    tmp_files.append(tmp_segm_path)
+                    tmp_files.append(tmp_depth)
+
+                    # Render RGB obj only
+                    obj_img_path = os.path.join(self.folder_rgb_obj,
+                                                '{}.jpg'.format(frame_prefix))
+                    obj_depth_path = os.path.join(self.folder_depth_obj, frame_prefix)
+                    tmp_obj_depth = obj_depth_path + '{:04d}.exr'.format(1)
+                    tmp_segm_obj_path = self.scene.renderRGB(obj_img_path, bg_path, obj_depth_path,
+                                                            self.folder_temp_segm, hide_smplh=True)
+                    tmp_files.append(tmp_segm_obj_path)
+                    tmp_files.append(tmp_obj_depth)
+
+                    # Render RGB hand only
+                    hand_img_path = os.path.join(self.folder_rgb_hand,
+                                                '{}.jpg'.format(frame_prefix))
+                    hand_depth_path = os.path.join(self.folder_depth_hand, frame_prefix)
+                    tmp_hand_depth = hand_depth_path + '{:04d}.exr'.format(1)
+                    tmp_segm_hand_path = self.scene.renderRGB(hand_img_path, bg_path, hand_depth_path,
+                                                            self.folder_temp_segm, hide_obj=True)
+                    tmp_files.append(tmp_segm_hand_path)
+                    tmp_files.append(tmp_hand_depth)
+
+                    # Check camera pose again (not sure why?) - to initialise to unity matrix 
+                    # so that the orientations are applied just on the hand/object/body/head
+                    # Hard code back the initial values
+                    self.scene.checkCamera()
+
+                    keep_render, obj_ratio = self.createConcatSegm(tmp_segm_path, tmp_segm_obj_path,
+                                                                tmp_segm_hand_path, frame_prefix)
+                    meta_infos['obj_visibility_ratio'] = obj_ratio
+
+                    keep_render = True 
+                    if keep_render:
+                        # Render depth image
+                        depth_infos = self.renderDepth(tmp_depth, tmp_hand_depth, tmp_obj_depth, frame_prefix)
+                        meta_infos.update(depth_infos)
+
+                        # Save meta
+                        meta_path = os.path.join(self.folder_meta,
+                                                    '{}.pkl'.format(frame_prefix))
+
+                        with open(meta_path, 'wb') as meta_f:
+                            pickle.dump(meta_infos, meta_f)
+
+                        frame_idx += 1
+                    else:
+                        print("Discarding rendered image. frame_idx: {:04d}".format(frame_idx + 1))
+                        tmp_files.append(img_path)
+                        tmp_files.append(obj_img_path)
+                        tmp_files.append(hand_img_path)
+
+                    # Render ground truth image -----------------------------------------------
+
+                    # ----------------------------------------------------------------------------------------------------------
+                    # Render RGB with hand skeleton
+                    img_hand_skeleton_path = os.path.join(self.folder_rgb_gt_vis, '{}.jpg'.format(frame_prefix))
+
+                    # Return values of renderRGB(...) are not needed in this case
+                    #self.scene.renderRGB(img_hand_skeleton_path, bg_path, depth_path, self.folder_temp_segm)
+
+                    #reloaded_rgb_image = cv2.imread(img_path) 
+                    reloaded_rgb_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+                
+                    fig, ax = plt.subplots(1,1)
+
+                    ax.axis("off")
+                    self.gt_visualization.visualize_hand_skeleton(meta_infos, ax)
+                    self.gt_visualization.visualize_object_vertices_and_bounding_box(meta_infos, ax)
+                    #print("----------RELOADED RGB IMAGE (after): {}".format(reloaded_rgb_image))
+
+                    ax.imshow(reloaded_rgb_image)
+
+                    fig.savefig(img_hand_skeleton_path[:-3]+"png")
+                    
+                    # --------------------------------------------------------------------------
+                    # Remove temporary files
+                    #for filepath in tmp_files:
+                    #    if os.path.isfile(filepath):
+                    #        os.remove(filepath)
+
+                    # Delete object.
+                    self.scene.clearUnused()
+                    self.scene.deleteObject()
+                    self.scene.deleteMaterials()
+
+                    self.current_data_recording_iterations += 1
+                    print("------ Updated iteration counter to {} / {} ------".format(self.current_data_recording_iterations, self.max_data_recording_iterations))
+
+                    #if (self.current_data_recording_iterations >= self.max_data_recording_iterations):
+                        # Exit application if data recording iterations exceeded defined threshold.
+                    #    print("----- Exit program after {} iterations -----".format(self.max_data_recording_iterations))  
+                    #    sys.exit(0)
 
 
     def renderGraspsInDir(self, grasp_folder, mano_right_path, smpl_model_path, smpl_data_path,
-                          texture_zoom=1, max_grasps_per_object=2, selected_grasps={}, filter_angle=94):
-        # Load grasp files
-        grasp_files = self.loadGraspFiles(grasp_folder, self.split)
+                          texture_zoom=1, max_grasps_per_object=2, selected_grasps={}, filter_angle=94, use_grasps_from_mat_file=False):
+ 
+        if use_grasps_from_mat_file:
+             if selected_grasps:
+                grasp_files = self.getConvertedMatGraspFiles(grasp_folder)
+             else: 
+                grasp_files = self.getConvertedMatGraspFiles(grasp_folder).values()      
+             
+        else:
+             # Load grasp files
+             grasp_files = self.loadGraspFiles(grasp_folder, self.split)
+        
         print("Found {} json grasp files.".format(len(grasp_files)))
-
+        
         # Load hand model
         self.scene.loadSMPLHModel(mano_right_path, smpl_model_path, smpl_data_path,
                                   texture_zoom=texture_zoom)
@@ -369,27 +392,46 @@ class GraspRenderer:
             debug_data_file_writer.writerow(["camera_view_x", "camera_view_y", "camera_view_z"])
             #debug_data_file_writer.writerow(["Time", "hand_head_dist", "rand_z", "headToHand", "rotHeadToHand", "headToPelvis", "rotHeadToPelvis", "global_rot_in_axisangle", "debug_left_hand_pose", "debug_right_hand_pose"]) # TO BE DEFINED
 
-            for grasp_file in grasp_files:
-                print("_________________________ grasp file {}".format(grasp_file.split('/')[-1]))
-                with open(grasp_file, 'r') as f:
-                    grasp_list = json.load(f)
-                
-                grasp_file_name = grasp_file.split('/')[-1]
+            # Check if grasp_files is a dictionary
+            if isinstance(grasp_files, dict):
+                # Convert dict items to a list of tuples (key, value)
+                iterable_grasp_files = grasp_files.items()
+            else:
+                # If grasp_files is already a list, assign it directly
+                iterable_grasp_files = grasp_files
 
+            for grasp_file in iterable_grasp_files:
+
+                if use_grasps_from_mat_file:
+                    if selected_grasps:
+                        grasp_list = grasp_file[1]
+                    else:
+                        grasp_list = grasp_file 
+                else:
+                    with open(grasp_file, 'r') as f:
+                        grasp_list = json.load(f)
+
+                print("_____________ selected grasps {}".format(selected_grasps))
+
+                #print("________________ *** grasp list {}".format(grasp_list))
+                grasp_count = len(grasp_list)
                 # Check if 'selected_grasps' is not empty:
                 if selected_grasps:
+                    if use_grasps_from_mat_file:
+                        grasp_file_name = grasp_file[0]
+                    else:
+                        grasp_file_name = grasp_file.split('/')[-1]
                     # Check if file name is in 'selected_grasps':
                     if grasp_file_name in selected_grasps:
+                        
                         selected_grasp_indices = selected_grasps[grasp_file_name]
-                        print("________________ selected grasp_IDs {}".format(selected_grasp_indices))
-
                         selected_grasps = [grasp_list[i] for i in selected_grasp_indices if i < len(grasp_list)]
                         grasp_list = selected_grasps
                         print("________________ selected grasps {}".format(selected_grasps))
-                        grasp_count = len(selected_grasps)
-                    else:
-                        grasp_count = len(grasp_list)
-      
+                        grasp_count = len(selected_grasps) 
+                else:
+                    print("rendering all available grasps")
+
                 #grasp_count = len(grasp_list)
                 print("Found {} grasps for object {}".format(grasp_count, grasp_file))
 
@@ -428,6 +470,7 @@ class GraspRenderer:
                             grasp['volume']
                     }
 
+                    print("___________________________mano_trans: {}".format(grasp['mano_trans'][0]))
                     camera_distances_to_render = [0.4]
 
                     camera_sphere_instance = camera_sphere.CameraSphere(sphere_radius=0.8, circle_radius=0.15)
@@ -455,13 +498,13 @@ if __name__ == "__main__":
         "backgrounds_path": "assets/backgrounds/",
         "ambiant_mean": 0.7,
         "ambiant_add": 0.5,
-        "renderings_per_grasp": 1,
         "min_obj_ratio": 0.4,
         "texture_zoom": 1,
         "render_body": False,
         "split": "train",
         "max_data_recording_iterations": 50,
-        "selected_grasps": {}
+        "selected_grasps": {},
+        "use_grasps_from_mat_file": False
     }
 
     json_config = json.loads(recover_json_string)
@@ -469,10 +512,11 @@ if __name__ == "__main__":
 
     print("__________MAX GRASPS PER OBJECT: {}".format(config["max_grasps_per_object"]))
     
+    print(type(config["selected_grasps"])) 
+    
     gr = GraspRenderer(results_root=config["results_root"],
                        obj_texture_path=config["obj_texture_path"],
                        backgrounds_path=config["backgrounds_path"],
-                       renderings_per_grasp=config["renderings_per_grasp"],
                        ambiant_add=config["ambiant_add"],
                        ambiant_mean=config["ambiant_mean"],
                        min_obj_ratio=config["min_obj_ratio"],
@@ -486,7 +530,8 @@ if __name__ == "__main__":
                          smpl_data_path=config["smpl_data_path"],
                          texture_zoom=config["texture_zoom"],
                          max_grasps_per_object=config["max_grasps_per_object"],
-                         selected_grasps=config["selected_grasps"])
+                         selected_grasps=config["selected_grasps"],
+                         use_grasps_from_mat_file=config["use_grasps_from_mat_file"])
 
     print("Dataset creation complete!")
     exit(0)

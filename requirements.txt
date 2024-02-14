@@ -6,4 +6,5 @@ tqdm>=4.30
 Pillow
 matplotlib
 trimesh
+scipy>=1.4.1
 git+https://github.com/hassony2/chumpy.git
