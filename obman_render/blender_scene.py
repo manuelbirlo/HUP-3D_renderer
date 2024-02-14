@@ -230,36 +230,18 @@ class BlenderScene:
             print("______grasp['hand_trans']____{}".format(grasp['hand_trans']))
             print("______self.mano_model.trans____{}".format(self.mano_model.trans))
 
-
-        """
-        # Given rotation matrix. An exmple rotmat only!
-        rotmat = np.array([
-             [
-                0.9999954104423523,
-                -5.209000300965272e-05,
-                -0.003030280116945505
-            ],
-            [
-                0.0,
-                0.9998522996902466,
-                -0.017187291756272316
-            ],
-            [
-                0.0030307278502732515,
-                0.0171872116625309,
-                0.9998477101325989
-            ]
-        ])
-        """
+        print("_______________ ROTMAT {}".format(np.array(grasp['rotmat'])))
         # Define the local translation vector (assuming translation along the z-axis)
-        local_translation = np.array([0, 0, -grasp['hand_trans'][1]])
-
+        #local_translation = np.array([0, 0, -grasp['hand_trans'][1]])
+        z_axis_offset = 0.07189549170510294 # A fixed z-axis offset between the default input voluson_painted.ply located at the origin and any voluson_painted.ply that is the result of POV_Surgery's grabnet-based grasp generation.
+        local_translation = np.array([0, 0, -z_axis_offset])
+        
         # Transform the local translation vector using the rotation matrix
-        global_translation = np.dot(rotmat, local_translation)
+        global_translation = np.dot(np.array(grasp['rotmat']), local_translation)
 
         # Apply the transformed translation vector to the object's global location
-        #self.obj.location += Vector(global_translation)
-        self.obj.location += Vector(local_translation)
+        self.obj.location += Vector(global_translation)
+        #self.obj.location += Vector(local_translation)
 
         self.mano_model.pose[:] = grasp['hand_pose'] # passing 48 values of mano_pose
         mesh_manip.alter_mesh(self.mano_obj, self.mano_model.r.tolist())
