@@ -144,33 +144,66 @@ class BlenderScene:
         self.materials = texturing.initialize_texture(
             self.smplh_obj, texture_zoom=texture_zoom, tmp_suffix='tmp')
 
+    def setup_vertex_color_material(self, obj, layer_name="Col"):
+        # Create a new material with vertex color support
+        mat = bpy.data.materials.new(name="VertexColorMaterial")
+        obj.data.materials.append(mat)
+        
+        # Enable use of nodes for the material
+        mat.use_nodes = True
+        nodes = mat.node_tree.nodes
+        links = mat.node_tree.links
+        
+        # Clear existing nodes
+        while nodes:
+            nodes.remove(nodes[0])
+        
+        # Create necessary nodes and link them
+        vertex_color_node = nodes.new(type='ShaderNodeVertexColor')
+        vertex_color_node.layer_name = layer_name
+        shader_node = nodes.new(type='ShaderNodeBsdfPrincipled')
+        output_node = nodes.new(type='ShaderNodeOutputMaterial')
+        links.new(vertex_color_node.outputs['Color'], shader_node.inputs['Base Color'])
+        links.new(shader_node.outputs['BSDF'], output_node.inputs['Surface'])
 
-    def loadObject(self, obj_path, obj_scale=1.0):
-        # replace .ply with .obj
-        obj_path = os.path.splitext(obj_path)[0] + ".obj"
-        print("obj_path: {}".format(obj_path))
+    def loadObject(self, ply_path, obj_scale=1.0):
+        # Ensure the path is for a .ply file
+        ply_path = os.path.splitext(ply_path)[0] + ".ply"
+        print("ply_path: {}".format(ply_path))
 
-        # Load object model
+        # Load PLY object model
         bpy.ops.object.select_all(action='DESELECT')
-        bpy.ops.import_scene.obj(filepath=obj_path)
+        bpy.ops.import_mesh.ply(filepath=ply_path)
+
+        # Assuming the imported PLY object is the only selected object
         self.obj = bpy.context.selected_objects[0]
         bpy.context.view_layer.objects.active = self.obj
-        bpy.ops.object.join()
+
+        # Assign the mesh data to self.obj_mesh
+        self.obj_mesh = self.obj.data
+
+        # Apply scale and rotation
         obj_scale = float(obj_scale)
         self.obj.scale = (obj_scale, obj_scale, obj_scale)
         self.obj.rotation_euler = (0, 0, 0)
-        bpy.ops.object.shade_smooth()
+        bpy.ops.object.transform_apply(location=False, rotation=True, scale=True)
 
-        model_name = self.obj.name
-        self.obj_mesh = bpy.data.meshes[model_name]
+        bpy.ops.object.shade_smooth()  # Set shading to smooth
 
+        # Setup vertex color material
+        if len(self.obj.data.vertex_colors) > 0:
+            self.setup_vertex_color_material(self.obj, "Col")
+
+        if self.obj.data.vertex_colors:
+            print("Vertex Color Layer Name:", self.obj.data.vertex_colors[0].name)
+
+        # Metadata about the object
         meta_infos = {
-            'obj_path': obj_path,
+            'ply_path': ply_path,
             'obj_scale': obj_scale
         }
 
         return meta_infos
-
 
     def renderRGB(self, img_path, bg_path, depth_path, folder_tmp_segm,
                   hide_smplh=False, hide_obj=False):
