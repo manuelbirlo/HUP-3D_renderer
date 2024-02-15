@@ -39,7 +39,10 @@ class CameraSphere:
     def generate_spherical_camera_locations(self):
         camera_locations_dict = {}
 
-        for i in range(self.max_latitude_floors):
+        # Add the 'north pole' sensor location at the top of the sphere (theta = 0 , phi = 0)
+        camera_locations_dict[0] = [(0, 0)]
+
+        for i in range(1, self.max_latitude_floors):  # Start from 1 since the north pole is already added
             theta = i * np.pi / self.max_latitude_floors
 
             # Calculate the number of circles that can fit on the current latitude floor
@@ -50,17 +53,16 @@ class CameraSphere:
             # Add the sensor locations to the dictionary under the current latitude floor key
             camera_locations_dict[i] = [(theta, phi) for phi in phi_values]
 
+        # Add the 'south pole' sensor location at the bottom of the sphere (theta = pi , phi = 0)
+        camera_locations_dict[self.max_latitude_floors] = [(np.pi, 0)]
+
         return camera_locations_dict
-    
-   
+
     def generate_blender_camera_view_angles(self):
 
         camera_view_angles_per_floor = {}
 
         camera_locations_dict = self.generate_spherical_camera_locations()
-
-        # Add an additional sensor location at the top of the sphere with latitude floor 0.
-        camera_locations_dict[0].append((0, 0))
 
         for floor, camera_locations in camera_locations_dict.items():
             camera_view_angles_of_current_floor = self.spherical_to_camera_view(camera_locations)
