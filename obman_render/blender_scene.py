@@ -199,7 +199,7 @@ class BlenderScene:
 
         # Metadata about the object
         meta_infos = {
-            'ply_path': ply_path,
+            'obj_path': ply_path,
             'obj_scale': obj_scale
         }
 
