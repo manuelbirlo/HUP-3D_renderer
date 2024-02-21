@@ -212,7 +212,7 @@ class GraspRenderer:
                             cam_view_z = cam_view[2]
                 
                             # Exclude camera view with x= 10, y=270 and x=350, y = 270 because the hollow of the rendered arm is shown from this perspective in these two frames.
-                            if (abs(cam_view_y - 270) < float_tolerance) and (abs(cam_view_x - 10) < float_tolerance or abs(cam_view_x - 350) < float_tolerance):
+                            if (abs(np.degrees(cam_view_y) - 270) < float_tolerance) and (abs(np.degrees(cam_view_x) - 10) < float_tolerance or abs(np.degrees(cam_view_x) - 350) < float_tolerance):
                                 print("Unwanted camera view (x = 10 or 350, y = 270, z = 0) got excluded from list of rendered images")
                                 continue
 
