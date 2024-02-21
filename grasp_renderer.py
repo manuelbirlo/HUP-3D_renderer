@@ -189,7 +189,7 @@ class GraspRenderer:
         return depth_info
 
 
-    def renderGrasp(self, grasp, grasp_idx, camera_view_angles_dict = {}, debug_data_file_writer = None):
+    def renderGrasp(self, grasp, grasp_idx, camera_views_to_render = {}, camera_distances_to_render = [], debug_data_file_writer = None):
         assert self.backgrounds is not None, "No backgrounds loaded!"
         assert self.body_textures is not None, "No body textures loaded!"
         #assert all(len(cam_view) == 3 for floor, cam_view in camera_views_to_render.items()), "Not all tuples in input list 'camera_views_to_render' have a length of 3"
@@ -201,19 +201,21 @@ class GraspRenderer:
         rendered_frames = os.listdir(self.folder_meta)
 
         frame_idx = 0
-        
-        for (sphere_radius, circle_radius), view_angles in camera_view_angles_dict.items():
-            for latitude_floor, cam_views in view_angles.items(): 
+          
+        for z_dist in camera_distances_to_render:
+
+            for latitude_floor, cam_views in camera_views_to_render.items(): 
+
                 for cam_view in cam_views:
-                    
+                        
                     cam_view_x = cam_view[0]
                     cam_view_y = cam_view[1]
                     cam_view_z = cam_view[2]
         
                     #frame_prefix = "{}_{}_grasp{:03d}_{:04d}_cam_view_x{:3f}_y{:3f}_z{:3f}_z_dist_{}".format(latitude_floor, model_name, grasp_idx + 1, frame_idx + 1, np.degrees(cam_view_x), np.degrees(cam_view_y), np.degrees(cam_view_z), z_dist)
-                    frame_prefix = "{}_grasp_{:d}_frame_{:d}_lat_floor_{:d}_cam_view_x{:d}_y{:d}_z{:d}_z_dist_{:.1f}_circle_rad_{:.1f}".format(
+                    frame_prefix = "{}_grasp_{:d}_frame_{:d}_latitude_floor_{:d}_cam_view_x{:d}_y{:d}_z{:d}_z_dist_{:1f}".format(
                                 model_name, grasp_idx + 1, frame_idx + 1, int(latitude_floor),
-                                int(np.degrees(cam_view_x)), int(np.degrees(cam_view_y)), int(np.degrees(cam_view_z)), sphere_radius, circle_radius)
+                                int(np.degrees(cam_view_x)), int(np.degrees(cam_view_y)), int(np.degrees(cam_view_z)), z_dist)
 
                     # Check if frame has already been rendered
                     if "{}.pkl".format(frame_prefix) in rendered_frames:
@@ -238,7 +240,7 @@ class GraspRenderer:
                     #meta_infos.update(obj_texture_info)
 
                     # Set hand and object pose
-                    hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, sphere_radius, debug_data_file_writer)
+                    hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, z_dist, debug_data_file_writer)
                     meta_infos.update(hand_info)
 
                     # Save grasp info
@@ -469,26 +471,12 @@ class GraspRenderer:
                     }
 
                     print("___________________________mano_trans: {}".format(grasp['mano_trans'][0]))
-                    
-                    sphere_radii = [0.4]  
-                    circle_radii = [0.15]  
+                    camera_distances_to_render = [0.4]
 
-                    # Initialize your dictionary
-                    camera_view_angles_dict = {}
+                    camera_sphere_instance = camera_sphere.CameraSphere(sphere_radius=0.8, circle_radius=0.15)
+                    camera_view_angles_per_latitude_floor = camera_sphere_instance.generate_blender_camera_view_angles()
 
-                    # Iterate over every combination of sphere_radius and circle_radius
-                    for sphere_radius in sphere_radii:
-                        for circle_radius in circle_radii:
-                            # Initialize CameraSphere instance with current combination
-                            camera_sphere_instance = camera_sphere.CameraSphere(sphere_radius=sphere_radius, circle_radius=circle_radius)
-                            
-                            # Generate blender camera view angles
-                            camera_view_angles = camera_sphere_instance.generate_blender_camera_view_angles()
-                            
-                            # Use a tuple of sphere_radius and circle_radius as key to ensure uniqueness for each combination
-                            camera_view_angles_dict[(sphere_radius, circle_radius)] = camera_view_angles
-
-                    self.renderGrasp(grasp_info, idx, camera_view_angles_dict, debug_data_file_writer)
+                    self.renderGrasp(grasp_info, idx, camera_view_angles_per_latitude_floor, camera_distances_to_render, debug_data_file_writer)
                     grasps_rendered += 1
                     
             
