@@ -332,13 +332,19 @@ class GraspRenderer:
                             # Render RGB with hand skeleton
                             img_hand_skeleton_path = os.path.join(self.folder_rgb_gt_vis, '{}.jpg'.format(frame_prefix))
 
-                            # Return values of renderRGB(...) are not needed in this case
-                            #self.scene.renderRGB(img_hand_skeleton_path, bg_path, depth_path, self.folder_temp_segm)
-
                             #reloaded_rgb_image = cv2.imread(img_path) 
                             reloaded_rgb_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
                         
-                            fig, ax = plt.subplots(1,1)
+                            # Get the dimensions of the image
+                            height, width, _ = reloaded_rgb_image.shape
+                            # Choose an arbitrary DPI for on-screen display purposes
+                            dpi = 100  
+
+                            # Calculate the size of the figure in inches (width and height in inches)
+                            figsize = (width / dpi, height / dpi)
+
+                            # Create the figure with the calculated size
+                            fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
 
                             ax.axis("off")
                             self.gt_visualization.visualize_hand_skeleton(meta_infos, ax)
@@ -346,8 +352,9 @@ class GraspRenderer:
                             #print("----------RELOADED RGB IMAGE (after): {}".format(reloaded_rgb_image))
 
                             ax.imshow(reloaded_rgb_image)
+                            fig.tight_layout(pad=0)
+                            fig.savefig(img_hand_skeleton_path[:-3] + "png", bbox_inches='tight', pad_inches=0)
 
-                            fig.savefig(img_hand_skeleton_path[:-3]+"png")
                             
                             # --------------------------------------------------------------------------
                             # Remove temporary files
@@ -475,7 +482,7 @@ class GraspRenderer:
 
                     print("___________________________mano_trans: {}".format(grasp['mano_trans'][0]))
                     camera_distances_to_render = [0.4]
-                    hand_textures_to_render = ["DefaultSkinAndBlueGlove", "AlternateBlueHand"]
+                    hand_textures_to_render = ["AlternateBlueHand", "DefaultSkinAndBlueGlove"]
 
                     camera_sphere_instance = camera_sphere.CameraSphere(sphere_radius=0.8, circle_radius=0.15)
                     camera_view_angles_per_latitude_floor = camera_sphere_instance.generate_blender_camera_view_angles()
