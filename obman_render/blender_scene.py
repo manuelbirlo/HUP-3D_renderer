@@ -410,7 +410,7 @@ class BlenderScene:
             "AlternateBlueHand": {
                 'rightForeArm': ((1.0, 0.6784313725, 0.3764705882), 1.0),
                 'rightHand': ((0.38039215686, 0.6196078431372549, 0.8666666667), 0.8),  # Example with a different blue hand
-                'rightHandIndex1': ((0.5647058824, 0.5921568627, 0.768627451), 0.8),
+                'rightHandIndex1': ((0.38039215686, 0.6196078431372549, 0.8666666667), 0.8),
             }
         }
 
