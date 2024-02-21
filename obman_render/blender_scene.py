@@ -400,7 +400,38 @@ class BlenderScene:
 
         return meta_infos
 
+    def get_hand_texture_configs(self):   
+        return {
+            "DefaultSkinAndBlueGlove": {
+                'rightForeArm': ((1.0, 0.6784313725, 0.3764705882), 1.0),  # skin color
+                'rightHand': ((0.5647058824, 0.5921568627, 0.768627451), 0.8),  # blue glove color
+                'rightHandIndex1': ((0.5647058824, 0.5921568627, 0.768627451), 0.8),  # blue glove color
+            },
+            "AlternateBlueHand": {
+                'rightForeArm': ((1.0, 0.6784313725, 0.3764705882), 1.0),
+                'rightHand': ((0.38039215686, 0.6196078431372549, 0.8666666667), 0.8),  # Example with a different blue hand
+                'rightHandIndex1': ((0.5647058824, 0.5921568627, 0.768627451), 0.8),
+            }
+        }
 
+
+    def setHandTextures(self, config_name):
+        hand_texture_configs = self.get_hand_texture_configs()
+
+        if config_name not in hand_texture_configs:
+            print(f"Configuration '{config_name}' not found.")
+            return
+
+        selected_config = hand_texture_configs[config_name]
+        for part_name, (color, roughness) in selected_config.items():
+            if part_name in self.materials:
+                self.setHandMaterial(self.materials[part_name].node_tree, color=color, roughness=roughness)
+            else:
+                print(f"Warning: Material for {part_name} not found.")
+
+
+
+    """
     def setHandTextures(self):
         self.setHandMaterial(self.materials['rightForeArm'].node_tree,
                              #color=(0.315, 0.395, 0.5),
@@ -416,6 +447,7 @@ class BlenderScene:
                              color=(0.5647058824, 0.5921568627, 0.768627451),
                              roughness=0.8)
 
+    """
 
     def setHandMaterial(self, tree, color=(1.0, 1.0, 1.0), roughness=0.5):
         for n in tree.nodes:
