@@ -201,7 +201,8 @@ class GraspRenderer:
         rendered_frames = os.listdir(self.folder_meta)
 
         frame_idx = 0
-          
+        float_tolerance = 1e-5 
+
         for z_dist in camera_distances_to_render:
 
             for latitude_floor, cam_views in camera_views_to_render.items(): 
@@ -211,9 +212,14 @@ class GraspRenderer:
                     cam_view_x = cam_view[0]
                     cam_view_y = cam_view[1]
                     cam_view_z = cam_view[2]
-        
+         
+                    # Exclude camera with with x= 10, y=270 because the hollow of the rendered arm in shown from this perspective.
+                    if abs(cam_view_x - 10) < float_tolerance and abs(cam_view_y - 270) < float_tolerance:
+                        print("Unwanted camera view (x = 10, y = 270, z = 0) got excluded from list of rendered images")
+                        continue
+
                     #frame_prefix = "{}_{}_grasp{:03d}_{:04d}_cam_view_x{:3f}_y{:3f}_z{:3f}_z_dist_{}".format(latitude_floor, model_name, grasp_idx + 1, frame_idx + 1, np.degrees(cam_view_x), np.degrees(cam_view_y), np.degrees(cam_view_z), z_dist)
-                    frame_prefix = "{}_grasp_{:d}_frame_{:d}_latitude_floor_{:d}_cam_view_x{:d}_y{:d}_z{:d}_z_dist_{:1f}".format(
+                    frame_prefix = "{}_grasp_{:d}_frame_{:d}_latitude_floor_{:d}_cam_view_x{:d}_y{:d}_z{:d}_z_dist_{:.1f}".format(
                                 model_name, grasp_idx + 1, frame_idx + 1, int(latitude_floor),
                                 int(np.degrees(cam_view_x)), int(np.degrees(cam_view_y)), int(np.degrees(cam_view_z)), z_dist)
 
