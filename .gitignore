@@ -6,7 +6,6 @@ tmp_*/
 core.*
 *.blend
 *.mtl
-*.obj
 *.pkl
 *.sw*
 *.txt
@@ -65,3 +64,4 @@ psb_v1.tar.gz
 tmp/
 *.lprof
 *.png
+voluson_*.jpg
