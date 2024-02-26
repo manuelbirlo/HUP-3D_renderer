@@ -37,6 +37,7 @@ class GraspRenderer:
         self.z_min = z_min
         self.z_max = z_max
         self.split = split
+        self.frame_idx = 0
         self.scene = blender_scene.BlenderScene(render_body,
                                                 ambiant_mean=ambiant_mean,
                                                 ambiant_add=ambiant_add)
@@ -62,7 +63,8 @@ class GraspRenderer:
         keep_render_obj, obj_ratio = conditions.segm_obj_condition(
             segm_img, obj_segm, min_obj_ratio=self.min_obj_ratio)
         keep_render = (self.render_body or keep_render_segm) and keep_render_obj
-
+        keep_render = True
+        
         if keep_render:
             segm_img = np.stack([segm_img, hand_segm, obj_segm], axis=2)
             # Write segmentation path
@@ -150,6 +152,7 @@ class GraspRenderer:
             filename = os.path.basename(mat_grasp_file) 
             mat_files_dict[filename] = mat_json 
 
+        print("____________mat files dict: {}".format(mat_files_dict.keys()))
         return mat_files_dict
 
 
@@ -157,7 +160,7 @@ class GraspRenderer:
         #TODO is a split parameter necessary?
         self.obj_textures = [os.path.join(path, f) for f in os.listdir(path)]
 
-        print("_______________________object texture: {}".format(self.obj_textures))
+        #print("_______________________object texture: {}".format(self.obj_textures))
         print('Got {} object textures'.format(len(self.obj_textures)))
 
 
@@ -186,18 +189,19 @@ class GraspRenderer:
         return depth_info
 
 
-    def renderGrasp(self, grasp, grasp_idx, camera_views_to_render = {}, camera_distances_to_render = [], hand_textures_to_render = [], debug_data_file_writer = None):
+    def renderGrasp(self, grasp, grasp_idx, camera_views_to_render = {}, camera_distances_to_render = [], hand_textures_to_render = []):
         assert self.backgrounds is not None, "No backgrounds loaded!"
         assert self.body_textures is not None, "No body textures loaded!"
         #assert all(len(cam_view) == 3 for floor, cam_view in camera_views_to_render.items()), "Not all tuples in input list 'camera_views_to_render' have a length of 3"
         
         obj_path = grasp['obj_path']
+        grasp_source = grasp['source']
         model_name = os.path.basename(obj_path)
 
         # Get list of already existing frames
         rendered_frames = os.listdir(self.folder_meta)
 
-        frame_idx = 0
+        #frame_idx = 0
         float_tolerance = 1e-5 
        
         for z_dist in camera_distances_to_render:
@@ -216,17 +220,17 @@ class GraspRenderer:
                                 print("Unwanted camera view (x = 10 or 350, y = 270, z = 0) got excluded from list of rendered images")
                                 continue
 
-                            frame_prefix = "{}_grasp_{:d}_frame_{:d}_latitude_floor_{:d}_cam_view_x{:d}_y{:d}_z{:d}_z_dist_{:.1f}".format(
-                                        model_name, grasp_idx + 1, frame_idx + 1, int(latitude_floor),
+                            frame_prefix = "{}_grasp_{:d}_frame_{:d}_source_{}_latitude_floor_{:d}_cam_view_x{:d}_y{:d}_z{:d}_z_dist_{:.1f}".format(
+                                        model_name, grasp_idx + 1, self.frame_idx + 1, grasp_source, int(latitude_floor),
                                         int(np.degrees(cam_view_x)), int(np.degrees(cam_view_y)), int(np.degrees(cam_view_z)), z_dist)
 
                             # Check if frame has already been rendered
                             if "{}.pkl".format(frame_prefix) in rendered_frames:
                                 print("Found rendered frame {}, continuing.".format(frame_prefix))
-                                frame_idx += 1
+                                self.frame_idx += 1
                                 continue
-                            else:
-                                print("\nWorking on {}".format(frame_prefix))
+                            #else:
+                            #    print("\nWorking on {}".format(frame_prefix))
 
                             # Load object
                             obj_info = self.scene.loadObject(obj_path)
@@ -243,7 +247,7 @@ class GraspRenderer:
                             #meta_infos.update(obj_texture_info)
 
                             # Set hand and object pose
-                            hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, z_dist, debug_data_file_writer)
+                            hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, z_dist)
                             meta_infos.update(hand_info)
 
                             # Save grasp info
@@ -319,9 +323,9 @@ class GraspRenderer:
                                 with open(meta_path, 'wb') as meta_f:
                                     pickle.dump(meta_infos, meta_f)
 
-                                frame_idx += 1
+                                self.frame_idx += 1
                             else:
-                                print("Discarding rendered image. frame_idx: {:04d}".format(frame_idx + 1))
+                                print("Discarding rendered image. frame_idx: {:04d}".format(self.frame_idx + 1))
                                 tmp_files.append(img_path)
                                 tmp_files.append(obj_img_path)
                                 tmp_files.append(hand_img_path)
@@ -368,7 +372,7 @@ class GraspRenderer:
                             self.scene.deleteMaterials()
 
                             self.current_data_recording_iterations += 1
-                            print("------ Updated iteration counter to {} / {} ------".format(self.current_data_recording_iterations, self.max_data_recording_iterations))
+                            #print("------ Updated iteration counter to {} / {} ------".format(self.current_data_recording_iterations, self.max_data_recording_iterations))
 
                             #if (self.current_data_recording_iterations >= self.max_data_recording_iterations):
                                 # Exit application if data recording iterations exceeded defined threshold.
@@ -381,6 +385,7 @@ class GraspRenderer:
  
         if use_grasps_from_mat_file:
              if selected_grasps:
+                #print("______________________________ selected grasps: {}".format(selected_grasps))
                 grasp_files = self.getConvertedMatGraspFiles(grasp_folder)
              else: 
                 grasp_files = self.getConvertedMatGraspFiles(grasp_folder).values()      
@@ -397,98 +402,104 @@ class GraspRenderer:
         
         inv_hand_pca = get_inv_hand_pca(mano_path=mano_right_path)
 
-        with open("recorded_data.csv", "w") as debug_data_file:
-            debug_data_file_writer = csv.writer(debug_data_file)
-            debug_data_file_writer.writerow(["camera_view_x", "camera_view_y", "camera_view_z"])
-            #debug_data_file_writer.writerow(["Time", "hand_head_dist", "rand_z", "headToHand", "rotHeadToHand", "headToPelvis", "rotHeadToPelvis", "global_rot_in_axisangle", "debug_left_hand_pose", "debug_right_hand_pose"]) # TO BE DEFINED
+        #with open("recorded_data.csv", "w") as debug_data_file:
+        #debug_data_file_writer = csv.writer(debug_data_file)
+        #debug_data_file_writer.writerow(["camera_view_x", "camera_view_y", "camera_view_z"])
+        #debug_data_file_writer.writerow(["Time", "hand_head_dist", "rand_z", "headToHand", "rotHeadToHand", "headToPelvis", "rotHeadToPelvis", "global_rot_in_axisangle", "debug_left_hand_pose", "debug_right_hand_pose"]) # TO BE DEFINED
 
-            # Check if grasp_files is a dictionary
-            if isinstance(grasp_files, dict):
-                # Convert dict items to a list of tuples (key, value)
-                iterable_grasp_files = grasp_files.items()
-            else:
-                # If grasp_files is already a list, assign it directly
-                iterable_grasp_files = grasp_files
+        # Check if grasp_files is a dictionary
+        if isinstance(grasp_files, dict):
+            # Convert dict items to a list of tuples (key, value)
+            iterable_grasp_files = grasp_files.items()
+        else:
+            # If grasp_files is already a list, assign it directly
+            iterable_grasp_files = grasp_files
 
-            for grasp_file in iterable_grasp_files:
+        for grasp_file in iterable_grasp_files:
 
-                if use_grasps_from_mat_file:
-                    if selected_grasps:
-                        grasp_list = grasp_file[1]
-                    else:
-                        grasp_list = grasp_file 
-                else:
-                    with open(grasp_file, 'r') as f:
-                        grasp_list = json.load(f)
-
-                print("_____________ selected grasps {}".format(selected_grasps))
-
-                #print("________________ *** grasp list {}".format(grasp_list))
-                grasp_count = len(grasp_list)
-                # Check if 'selected_grasps' is not empty:
+            if use_grasps_from_mat_file:
                 if selected_grasps:
-                    if use_grasps_from_mat_file:
-                        grasp_file_name = grasp_file[0]
-                    else:
-                        grasp_file_name = grasp_file.split('/')[-1]
-                    # Check if file name is in 'selected_grasps':
-                    if grasp_file_name in selected_grasps:
-                        
-                        selected_grasp_indices = selected_grasps[grasp_file_name]
-                        selected_grasps = [grasp_list[i] for i in selected_grasp_indices if i < len(grasp_list)]
-                        grasp_list = selected_grasps
-                        print("________________ selected grasps {}".format(selected_grasps))
-                        grasp_count = len(selected_grasps) 
+                    grasp_list = grasp_file[1]
                 else:
-                    print("rendering all available grasps")
+                    grasp_list = grasp_file 
+            else:
+                with open(grasp_file, 'r') as f:
+                    grasp_list = json.load(f)
 
-                #grasp_count = len(grasp_list)
-                print("Found {} grasps for object {}".format(grasp_count, grasp_file))
+            #print("_____________ selected grasps {}".format(selected_grasps))
 
-                grasps_rendered = 0
-                for idx, grasp in enumerate(grasp_list):
-                    if grasps_rendered >= max_grasps_per_object:
-                        print("Reached maximum of {} grasps for object {}".format(max_grasps_per_object, grasp_file))
-                        break
+            #print("________________ *** grasp list {}".format(grasp_list))
+            grasp_count = len(grasp_list)
+            # Check if 'selected_grasps' is not empty:
+            if selected_grasps:
+                if use_grasps_from_mat_file:
+                    grasp_file_name = grasp_file[0]
+                    print("____________ grasp_file_name: {}".format(grasp_file_name))
+                else:
+                    grasp_file_name = grasp_file.split('/')[-1]
+                    print("____________ grasp_file_name (else case): {}".format(grasp_file_name))
+                # Check if file name is in 'selected_grasps':
+                if grasp_file_name in selected_grasps:
+                    
+                    selected_grasp_indices = selected_grasps[grasp_file_name]
+                    selected_grasps = [grasp_list[i] for i in selected_grasp_indices if i < len(grasp_list)]
+                    grasp_list = selected_grasps
+                    print("______________________ selected grasp indices {}".format(selected_grasp_indices))
+                    grasp_count = len(selected_grasps) 
+                else:
+                    print("______________________________________grasp_file_name {} NOT in selected_grasps {}".format(grasp_file_name, selected_grasps))
+                    continue
+            else:
+                print("rendering all available grasps")
 
-                    #if grasp_wrong(grasp, angle=filter_angle):
-                    #    print("Skipping wrong grasp.")
-                    #    continue
-                    grasp_info = {
-                        'obj_path':
-                            grasp['body'],
-                        'sample_scale':
-                            1.0,
-                        'pose':
-                            grasp['pose'],
-                        'hand_pose':
-                            grasp['mano_pose'],
-                        'hand_trans':
-                            grasp['mano_trans'][0],
-                        'rotmat':
-                            grasp['rotmat'],
-                        'pca_pose':
-                            np.array(
-                                grasp['mano_pose'][3:]).dot(inv_hand_pca),
-                        'hand_global_rot':
-                            grasp['mano_pose'][:3],
-                        'grasp_quality':
-                            grasp['quality'],
-                        'grasp_epsilon':
-                            grasp['epsilon'],
-                        'grasp_volume':
-                            grasp['volume']
-                    }
+            #grasp_count = len(grasp_list)
+            print("Found {} grasps".format(grasp_count))
 
-                    print("___________________________mano_trans: {}".format(grasp['mano_trans'][0]))
-                    camera_distances_to_render = [0.4]
-                    hand_textures_to_render = ["AlternateBlueHand", "DefaultSkinAndBlueGlove"]
+            grasps_rendered = 0
+            for idx, grasp in enumerate(grasp_list):
+                if grasps_rendered >= max_grasps_per_object:
+                    print("Reached maximum of {} grasps for object {}".format(max_grasps_per_object, grasp_file))
+                    break
 
-                    camera_sphere_instance = camera_sphere.CameraSphere(sphere_radius=0.8, circle_radius=0.15)
-                    camera_view_angles_per_latitude_floor = camera_sphere_instance.generate_blender_camera_view_angles()
+                #if grasp_wrong(grasp, angle=filter_angle):
+                #    print("Skipping wrong grasp.")
+                #    continue
+                grasp_info = {
+                    'obj_path':
+                        grasp['body'],
+                    'sample_scale':
+                        1.0,
+                    'pose':
+                        grasp['pose'],
+                    'hand_pose':
+                        grasp['mano_pose'],
+                    'hand_trans':
+                        grasp['mano_trans'][0],
+                    'rotmat':
+                        grasp['rotmat'],
+                    'pca_pose':
+                        np.array(
+                            grasp['mano_pose'][3:]).dot(inv_hand_pca),
+                    'hand_global_rot':
+                        grasp['mano_pose'][:3],
+                    'grasp_quality':
+                        grasp['quality'],
+                    'grasp_epsilon':
+                        grasp['epsilon'],
+                    'grasp_volume':
+                        grasp['volume'],
+                    'source': grasp_file_name
+                }
 
-                    self.renderGrasp(grasp_info, idx, camera_view_angles_per_latitude_floor, camera_distances_to_render, hand_textures_to_render, debug_data_file_writer)
-                    grasps_rendered += 1
+                #print("___________________________mano_trans: {}".format(grasp['mano_trans'][0]))
+                camera_distances_to_render = [0.5, 0.8]
+                hand_textures_to_render = ["DefaultSkinAndBlueGlove", "AlternateBlueHand"]
+
+                camera_sphere_instance = camera_sphere.CameraSphere(sphere_radius=0.8, circle_radius=0.15)
+                camera_view_angles_per_latitude_floor = camera_sphere_instance.generate_blender_camera_view_angles()
+
+                self.renderGrasp(grasp_info, idx, camera_view_angles_per_latitude_floor, camera_distances_to_render, hand_textures_to_render)
+                grasps_rendered += 1
                     
             
 if __name__ == "__main__":
