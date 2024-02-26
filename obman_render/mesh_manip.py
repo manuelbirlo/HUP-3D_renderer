@@ -184,8 +184,8 @@ def egocentric_viewpoint(global_joint_positions, head_idx=15, hand_idx=40, pelvi
     axisangle = Rotation.from_matrix(rot).as_rotvec()
     #print("Norm: {}".format(np.linalg.norm(axisangle)))
 
-    if debug_data_file_writer is not None:
-        debug_data_file_writer.writerow([axisangle[0], axisangle[1], axisangle[2]])
+    #if debug_data_file_writer is not None:
+    #   debug_data_file_writer.writerow([axisangle[0], axisangle[1], axisangle[2]])
     #   debug_data_file_writer.writerow([datetime.datetime.now(), None, None, headToHand, rotHeadToHand, headToPelvis, rotHeadToPelvis, axisangle, None, None])
        
     return axisangle
@@ -238,8 +238,8 @@ def randomized_verts(model,
 
     cmu_parms, fshapes, name = load_body_data(smpl_data, idx=cmu_idx)
     pose_data = cmu_parms[name]['poses']
-    nframes = pose_data.shape[0]
-    randframe = np.random.randint(nframes)
+    #nframes = pose_data.shape[0]
+    #randframe = np.random.randint(nframes)
 
     # Init with zero trans
     model.trans[:] = np.zeros(model.trans.size)
@@ -283,8 +283,8 @@ def randomized_verts(model,
     hand_comps = int(ncomps / 2)
     hand_idx = 66
 
-    debug_left_hand_pose = None
-    debug_right_hand_pose = None
+    #debug_left_hand_pose = None
+    #debug_right_hand_pose = None
 
     if hand_pose is not None:
         if side == 'left':
@@ -309,7 +309,7 @@ def randomized_verts(model,
         # Initialising right_rand with zeros now: np.zeros((hand_comps, ))
         left_rand = np.zeros((hand_comps, )) 
         randpose[hand_idx + hand_comps:] = left_rand
-        debug_left_hand_pose = left_rand
+        #debug_left_hand_pose = left_rand
     model.pose[:] = randpose
     # Check the final values of rand_pose
     
