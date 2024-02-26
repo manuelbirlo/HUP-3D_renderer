@@ -15,12 +15,15 @@ core.*
 
 # Ignore everything related to the Blender installation
 blender-2.82a-linux64
+blender-4.0.0-linux-x64
 
 *.zip
 *.tar
 *.xz
 
 dist-packages/
+
+datasets/synthetic/train
 
 mano/models/.DS_Store
 mano/models/MANO_RIGHT.pkl
