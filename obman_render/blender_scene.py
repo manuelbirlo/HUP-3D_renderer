@@ -169,7 +169,7 @@ class BlenderScene:
     def loadObject(self, ply_path, obj_scale=1.0):
         # Ensure the path is for a .ply file
         ply_path = os.path.splitext(ply_path)[0] + ".ply"
-        print("ply_path: {}".format(ply_path))
+        #print("ply_path: {}".format(ply_path))
 
         # Load PLY object model
         bpy.ops.object.select_all(action='DESELECT')
@@ -194,8 +194,8 @@ class BlenderScene:
         if len(self.obj.data.vertex_colors) > 0:
             self.setup_vertex_color_material(self.obj, "Col")
 
-        if self.obj.data.vertex_colors:
-            print("Vertex Color Layer Name:", self.obj.data.vertex_colors[0].name)
+        #if self.obj.data.vertex_colors:
+        #    print("Vertex Color Layer Name:", self.obj.data.vertex_colors[0].name)
 
         # Metadata about the object
         meta_infos = {
@@ -245,12 +245,12 @@ class BlenderScene:
         for vert in mesh.vertices:
             vert.co = rot_matrix_blender @ vert.co
 
-    def setHandAndObjectPose(self, grasp, z_min, z_max, cam_view, z_distance, debug_data_file_writer = None):
+    def setHandAndObjectPose(self, grasp, z_min, z_max, cam_view, z_distance):
         assert len(cam_view) == 3, "Input tuple 'cam_view' does not have required length 3"
 
         # Set hand pose
         if 'mano_trans' in grasp:
-            print("_____________ if 'mano_trans' in grasp:_________________")
+            #print("_____________ if 'mano_trans' in grasp:_________________")
             self.mano_model.trans[:] = [val for val in grasp['mano_trans']]
         else:
             self.mano_model.trans[:] = grasp['hand_trans']
@@ -260,10 +260,10 @@ class BlenderScene:
             
             #self.mano_model.trans[:] = np.array(grasp['hand_trans']) #grasp['hand_trans']
 
-            print("______grasp['hand_trans']____{}".format(grasp['hand_trans']))
-            print("______self.mano_model.trans____{}".format(self.mano_model.trans))
+            #print("______grasp['hand_trans']____{}".format(grasp['hand_trans']))
+            #print("______self.mano_model.trans____{}".format(self.mano_model.trans))
 
-        print("_______________ ROTMAT {}".format(np.array(grasp['rotmat'])))
+        #print("_______________ ROTMAT {}".format(np.array(grasp['rotmat'])))
         # Define the local translation vector (assuming translation along the z-axis)
         #local_translation = np.array([0, 0, -grasp['hand_trans'][1]])
         z_axis_offset = 0.07189549170510294 # A fixed z-axis offset between the default input voluson_painted.ply located at the origin and any voluson_painted.ply that is the result of POV_Surgery's grabnet-based grasp generation.
@@ -273,8 +273,8 @@ class BlenderScene:
         global_translation = np.dot(np.array(grasp['rotmat']), local_translation)
 
         # Apply the transformed translation vector to the object's global location
-        self.obj.location += Vector(global_translation)
-        #self.obj.location += Vector(local_translation)
+        #self.obj.location += Vector(global_translation)
+        self.obj.location += Vector(local_translation)
 
         self.mano_model.pose[:] = grasp['hand_pose'] # passing 48 values of mano_pose
         mesh_manip.alter_mesh(self.mano_obj, self.mano_model.r.tolist())
@@ -296,8 +296,7 @@ class BlenderScene:
             random_pose=False,
             cam_viewpoint_x = cam_view[0],
             cam_viewpoint_y=cam_view[1],
-            cam_viewpoint_z=cam_view[2],
-            debug_data_file_writer=debug_data_file_writer)
+            cam_viewpoint_z=cam_view[2])
 
         mesh_manip.alter_mesh(self.smplh_obj, smplh_verts.tolist())
 
@@ -325,8 +324,8 @@ class BlenderScene:
         # Apply the translation after considering the object's rotation
         #self.apply_translation_after_rotation(self.obj, desired_world_translation)
 
-        print("______________________________________ object location after rigid transform:_______{}_______".format(self.obj.location))
-        print("______________________________________ hand location after rigid transform:_______{}_______".format(self.mano_obj.location))
+        #print("______________________________________ object location after rigid transform:_______{}_______".format(self.obj.location))
+        #print("______________________________________ hand location after rigid transform:_______{}_______".format(self.mano_obj.location))
         """
         additional_rotmat = [
             [0.9999619126319885, -0.00013189652236178517, -0.008725538849830627, 0],
