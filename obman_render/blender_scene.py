@@ -37,6 +37,7 @@ class BlenderScene:
         self.scene.render.resolution_x = 256
         self.scene.render.resolution_y = 256
         self.scene.render.resolution_percentage = 100
+        self.z_axis_offset = 0.07189549170510294
 
         # Use AI denoising
         bpy.context.view_layer.cycles.use_denoising = True
@@ -266,11 +267,11 @@ class BlenderScene:
         #print("_______________ ROTMAT {}".format(np.array(grasp['rotmat'])))
         # Define the local translation vector (assuming translation along the z-axis)
         #local_translation = np.array([0, 0, -grasp['hand_trans'][1]])
-        z_axis_offset = 0.07189549170510294 # A fixed z-axis offset between the default input voluson_painted.ply located at the origin and any voluson_painted.ply that is the result of POV_Surgery's grabnet-based grasp generation.
-        local_translation = np.array([0, 0, -z_axis_offset])
+        #z_axis_offset = 0.07189549170510294 # A fixed z-axis offset between the default input voluson_painted.ply located at the origin and any voluson_painted.ply that is the result of POV_Surgery's grabnet-based grasp generation.
+        local_translation = np.array([0, 0, -self.z_axis_offset])
         
         # Transform the local translation vector using the rotation matrix
-        global_translation = np.dot(np.array(grasp['rotmat']), local_translation)
+        #global_translation = np.dot(np.array(grasp['rotmat']), local_translation)
 
         # Apply the transformed translation vector to the object's global location
         #self.obj.location += Vector(global_translation)
