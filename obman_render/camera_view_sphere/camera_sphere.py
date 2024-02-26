@@ -82,7 +82,8 @@ class CameraSphere:
                     blender_converted_camera_angles.append(converted_angles)
 
             camera_view_angles_per_floor[floor] = blender_converted_camera_angles
-        
+        # Optional: return vamera view angles in reverse order. This way, the first frame (south pole) shows already whether the grasp is plausible or not.
+        #return {key: value for key, value in reversed(list(camera_view_angles_per_floor.items()))}
         return camera_view_angles_per_floor
 
             
