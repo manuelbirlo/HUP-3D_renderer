@@ -12,6 +12,7 @@ from PIL import Image
 from matplotlib import pyplot as plt
 
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 root = '.'
 sys.path.insert(0, root)
@@ -87,6 +88,8 @@ class GraspRenderer:
         self.folder_rgb_obj = os.path.join(results_root, 'rgb_obj')
         self.folder_depth_hand = os.path.join(results_root, 'depth_hand')
         self.folder_depth_obj = os.path.join(results_root, 'depth_obj')
+        self.camera_distances_to_render = [0.5, 0.8]
+        self.hand_textures_to_render = ["DefaultSkinAndBlueGlove", "AlternateBlueHand"]
         folders = [
             self.folder_meta,
             self.folder_rgb,
@@ -188,6 +191,129 @@ class GraspRenderer:
         }
         return depth_info
 
+# -------------------- TODO: complete this code that increases the runtime performance a bit -----------------------
+    def renderHandSkeleton(self, img_path, meta_infos):
+        rgb_gt_vis_frame_prefix = img_path.split('/')[-1].replace("img_", "img_rgb_gt_vis_")
+        img_hand_skeleton_path = os.path.join(self.folder_rgb_gt_vis, f'{rgb_gt_vis_frame_prefix}')
+
+        reloaded_rgb_image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+
+        height, width, _ = reloaded_rgb_image.shape
+        dpi = 100
+        figsize = (width / dpi, height / dpi)
+
+        fig, ax = plt.subplots(1, figsize=figsize, dpi=dpi)
+        ax.axis("off")
+
+        # Visualization methods - assuming these are correctly implemented in gt_visualization
+        self.gt_visualization.visualize_hand_skeleton(meta_infos, ax)
+        self.gt_visualization.visualize_object_vertices_and_bounding_box(meta_infos, ax)
+
+        ax.imshow(reloaded_rgb_image)
+        fig.tight_layout(pad=0)
+        fig.savefig(img_hand_skeleton_path[:-3] + "png", bbox_inches='tight', pad_inches=0)
+        plt.close(fig)  # Close the figure to free memory
+
+    def renderGraspXXX(self, grasp, grasp_idx, camera_views_to_render={}, camera_distances_to_render=[], hand_textures_to_render=[]):
+        assert self.backgrounds is not None, "No backgrounds loaded!"
+        
+        obj_path = grasp['obj_path']
+        rendered_frames = os.listdir(self.folder_meta)
+        float_tolerance = 1e-5
+
+        # Pre-load object and setup materials once for all renders
+
+        for z_dist in camera_distances_to_render:
+            for background_image_path in self.backgrounds:
+                bg_path = background_image_path
+                for hand_texture in hand_textures_to_render:
+                    #self.scene.setHandTextures(hand_texture)
+                    for latitude_floor, cam_views in camera_views_to_render.items():
+                        for cam_view in cam_views:
+                            if self.isCameraViewUnwanted(cam_view, float_tolerance):
+                                continue
+
+                            frame_prefix = f"img_{self.frame_idx + 1}"
+                            if f"{frame_prefix}.pkl" in rendered_frames:
+                                self.frame_idx += 1
+                                continue
+                            else:
+                                print("_____________ didn't update frame ID")
+                            obj_info = self.scene.loadObject(obj_path)
+                            self.scene.setToolMaterialPassIndices()
+
+                            meta_infos = self.prepareMetaInfo(grasp, obj_info, bg_path)
+                            lighting_info = self.scene.setLighting()
+                            meta_infos.update(lighting_info)
+
+                            # Set hand and object pose
+                            hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, z_dist) # adds coords_2d to hand_info
+                            meta_infos.update(hand_info)
+
+                            self.scene.setHandTextures(hand_texture)
+
+                            # Save grasp info
+                            for label in [
+                                'obj_path', 'pca_pose', 'grasp_quality',
+                                'grasp_epsilon', 'grasp_volume', 'hand_trans',
+                                'hand_global_rot', 'hand_pose'
+                            ]:
+                                meta_infos[label] = grasp[label]
+
+                            self.renderAllViews(frame_prefix, cam_view, z_dist, bg_path, meta_infos)
+
+                            # Delete object.
+                            self.scene.clearUnused()
+                            self.scene.deleteObject()
+                            self.scene.deleteMaterials()
+                            
+                            self.frame_idx += 1
+
+        # Assuming cleanup is done correctly in renderAllViews()
+        self.scene.clearUnused()
+        self.scene.deleteObject()
+        self.scene.deleteMaterials()
+
+    def isCameraViewUnwanted(self, cam_view, tolerance):
+        cam_view_y = cam_view[1]
+        cam_view_x = cam_view[0]
+        return (abs(np.degrees(cam_view_y) - 270) < tolerance) and (abs(np.degrees(cam_view_x) - 10) < tolerance or abs(np.degrees(cam_view_x) - 350) < tolerance)
+
+    def prepareMetaInfo(self, grasp, obj_info, bg_path):
+        meta_infos = obj_info.copy()
+        meta_infos.update({
+            'obj_path': grasp['obj_path'],
+            'bg_path': bg_path,
+            # Add other relevant meta info from grasp here
+        })
+        return meta_infos
+
+    def renderAllViews(self, frame_prefix, cam_view, z_dist, bg_path, meta_infos):
+        # Setup camera view and other initial tasks as previously described
+        
+        img_path = os.path.join(self.folder_rgb, f'{frame_prefix}.jpg')
+        depth_path = os.path.join(self.folder_depth, f'{frame_prefix}.png')
+
+        # Render RGB and get temporary segmentation path
+        tmp_segm_path = self.scene.renderRGB(img_path, bg_path, depth_path, self.folder_temp_segm, hide_smplh=False, hide_obj=False)
+
+        # Process and save depth information
+        depth_info = self.renderDepth(tmp_segm_path, None, None, frame_prefix)  # Assuming tmp_hand_depth and tmp_obj_depth are managed internally or elsewhere
+    
+        # Save metadata with depth information included
+        meta_infos['depth'] = depth_info
+        meta_frame_path = os.path.join(self.folder_meta, f'{frame_prefix}.pkl')
+        with open(meta_frame_path, 'wb') as f:
+            pickle.dump(meta_infos, f)
+        
+        # Render RGB with hand skeleton visualization
+        self.renderHandSkeleton(img_path, meta_infos)
+
+#----------------------------------------------------------------------------------------------------------------------
+    
+
+
+
 
     def renderGrasp(self, grasp, grasp_idx, camera_views_to_render = {}, camera_distances_to_render = [], hand_textures_to_render = []):
         assert self.backgrounds is not None, "No backgrounds loaded!"
@@ -213,7 +339,7 @@ class GraspRenderer:
                                 
                             cam_view_x = cam_view[0]
                             cam_view_y = cam_view[1]
-                            cam_view_z = cam_view[2]
+                            #cam_view_z = cam_view[2]
                 
                             # Exclude camera view with x= 10, y=270 and x=350, y = 270 because the hollow of the rendered arm is shown from this perspective in these two frames.
                             if (abs(np.degrees(cam_view_y) - 270) < float_tolerance) and (abs(np.degrees(cam_view_x) - 10) < float_tolerance or abs(np.degrees(cam_view_x) - 350) < float_tolerance):
@@ -235,7 +361,7 @@ class GraspRenderer:
                             #obj_texture_info, obj_osl_path, obj_oso_path = self.scene.addObjectTexture(obj_path, obj_textures=self.obj_textures, random_obj_textures=False)
                             self.scene.setToolMaterialPassIndices()
                             # Keep track of temporary files to delete at the end
-                            tmp_files = []
+                            #tmp_files = []
                             #tmp_files.append(obj_osl_path)
                             #tmp_files.append(obj_oso_path)
 
@@ -245,7 +371,7 @@ class GraspRenderer:
                             #meta_infos.update(obj_texture_info)
 
                             # Set hand and object pose
-                            hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, z_dist)
+                            hand_info = self.scene.setHandAndObjectPose(grasp, self.z_min, self.z_max, cam_view, z_dist) # adds coords_2d to hand_info
                             meta_infos.update(hand_info)
 
                             # Save grasp info
@@ -278,8 +404,8 @@ class GraspRenderer:
                             depth_path = os.path.join(self.folder_depth, depth_frame_prefix)
                             tmp_depth = depth_path + '{:04d}.exr'.format(1)
                             tmp_segm_path = self.scene.renderRGB(img_path, bg_path, depth_path, self.folder_temp_segm)
-                            tmp_files.append(tmp_segm_path)
-                            tmp_files.append(tmp_depth)
+                            #tmp_files.append(tmp_segm_path)
+                            #tmp_files.append(tmp_depth)
 
                             # Render RGB obj only
                             rgb_obj_frame_prefix = frame_prefix.replace("img_", "img_rgb_obj_")
@@ -288,8 +414,8 @@ class GraspRenderer:
                             obj_depth_path = os.path.join(self.folder_depth_obj, depth_obj_frame_prefix)
                             tmp_obj_depth = obj_depth_path + '{:04d}.exr'.format(1)
                             tmp_segm_obj_path = self.scene.renderRGB(obj_img_path, bg_path, obj_depth_path, self.folder_temp_segm, hide_smplh=True)
-                            tmp_files.append(tmp_segm_obj_path)
-                            tmp_files.append(tmp_obj_depth)
+                            #tmp_files.append(tmp_segm_obj_path)
+                            #tmp_files.append(tmp_obj_depth)
 
                             # Render RGB hand only
                             rgb_hand_frame_prefix = frame_prefix.replace("img_", "img_rgb_hand_")
@@ -297,8 +423,8 @@ class GraspRenderer:
                             hand_depth_path = os.path.join(self.folder_depth_hand, frame_prefix)
                             tmp_hand_depth = hand_depth_path + '{:04d}.exr'.format(1)
                             tmp_segm_hand_path = self.scene.renderRGB(hand_img_path, bg_path, hand_depth_path, self.folder_temp_segm, hide_obj=True)
-                            tmp_files.append(tmp_segm_hand_path)
-                            tmp_files.append(tmp_hand_depth)
+                            #tmp_files.append(tmp_segm_hand_path)
+                            #tmp_files.append(tmp_hand_depth)
 
                             # Check camera pose again (not sure why?) - to initialise to unity matrix 
                             # so that the orientations are applied just on the hand/object/body/head
@@ -324,9 +450,9 @@ class GraspRenderer:
                                 self.frame_idx += 1
                             else:
                                 print("Discarding rendered image. frame_idx: {:04d}".format(self.frame_idx + 1))
-                                tmp_files.append(img_path)
-                                tmp_files.append(obj_img_path)
-                                tmp_files.append(hand_img_path)
+                                #tmp_files.append(img_path)
+                                #tmp_files.append(obj_img_path)
+                                #tmp_files.append(hand_img_path)
 
                             # Render ground truth image -----------------------------------------------
 
@@ -418,7 +544,11 @@ class GraspRenderer:
         camera_sphere_instance = camera_sphere.CameraSphere(sphere_radius=0.8, circle_radius=0.15)
         camera_view_angles_per_latitude_floor = camera_sphere_instance.generate_blender_camera_view_angles()
 
+        #print("_______________________________ No. of iterable grasp files {}".format(len(iterable_grasp_files)))
+        #index = 0
         for grasp_file in iterable_grasp_files:
+            #index += 1
+            #print("____________________________ INDEX {}".format(index))
 
             if use_grasps_from_mat_file:
                 if selected_grasps:
@@ -431,26 +561,26 @@ class GraspRenderer:
 
             #print("_____________ selected grasps {}".format(selected_grasps))
 
-            #print("________________ *** grasp list {}".format(grasp_list))
+            #print("________________ *** grasp list {}".format(len(grasp_list)))
             grasp_count = len(grasp_list)
             # Check if 'selected_grasps' is not empty:
             if selected_grasps:
                 if use_grasps_from_mat_file:
                     grasp_file_name = grasp_file[0]
-                    print("____________ grasp_file_name: {}".format(grasp_file_name))
+                    #print("____________ grasp_file_name: {}".format(grasp_file_name))
                 else:
                     grasp_file_name = grasp_file.split('/')[-1]
-                    print("____________ grasp_file_name (else case): {}".format(grasp_file_name))
+                    #print("____________ grasp_file_name (else case): {}".format(grasp_file_name))
                 # Check if file name is in 'selected_grasps':
                 if grasp_file_name in selected_grasps:
                     
                     selected_grasp_indices = selected_grasps[grasp_file_name]
-                    selected_grasps = [grasp_list[i] for i in selected_grasp_indices if i < len(grasp_list)]
-                    grasp_list = selected_grasps
-                    print("______________________ selected grasp indices {}".format(selected_grasp_indices))
+                    grasp_list = [grasp_list[i] for i in selected_grasp_indices if i < len(grasp_list)]
+                    #grasp_list = selected_grasps
+                    #print("______________________ selected grasp indices {}".format(selected_grasp_indices))
                     grasp_count = len(selected_grasps) 
                 else:
-                    print("______________________________________grasp_file_name {} NOT in selected_grasps {}".format(grasp_file_name, selected_grasps))
+                    #print("______________________________________grasp_file_name {} NOT in selected_grasps {}".format(grasp_file_name, selected_grasps.keys()))
                     continue
             else:
                 print("rendering all available grasps")
@@ -460,10 +590,11 @@ class GraspRenderer:
 
             grasps_rendered = 0
             for idx, grasp in enumerate(grasp_list):
+                #print("____________ rendering {}".format(idx))
                 if grasps_rendered >= max_grasps_per_object:
                     print("Reached maximum of {} grasps for object {}".format(max_grasps_per_object, grasp_file))
                     break
-
+    
                 #if grasp_wrong(grasp, angle=filter_angle):
                 #    print("Skipping wrong grasp.")
                 #    continue
@@ -496,10 +627,10 @@ class GraspRenderer:
 
                 #print("___________________________mano_trans: {}".format(grasp['mano_trans'][0]))
                 #print("___________________________rotmat: {}".format(grasp['rotmat']))
-                camera_distances_to_render = [0.5, 0.8]
-                hand_textures_to_render = ["DefaultSkinAndBlueGlove", "AlternateBlueHand"]
+                #camera_distances_to_render = [0.5, 0.8]
+                #hand_textures_to_render = ["DefaultSkinAndBlueGlove", "AlternateBlueHand"]
 
-                self.renderGrasp(grasp_info, idx, camera_view_angles_per_latitude_floor, camera_distances_to_render, hand_textures_to_render)
+                self.renderGrasp(grasp_info, idx, camera_view_angles_per_latitude_floor, self.camera_distances_to_render, self.hand_textures_to_render)
                 grasps_rendered += 1
                     
             
