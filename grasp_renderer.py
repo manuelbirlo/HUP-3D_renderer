@@ -44,9 +44,7 @@ class GraspRenderer:
                                                 ambiant_add=ambiant_add)
         self._createResultDirectories(os.path.join(results_root, split))
 
-        self.gt_visualization = ground_truth_hand_object_visualization.GroundTruthVisualization(self.scene,
-                                                                                                self.folder_rgb,
-                                                                                                self.folder_rgb_gt_vis)
+        self.gt_visualization = ground_truth_hand_object_visualization.GroundTruthVisualization()
 
         self.loadBackgrounds(backgrounds_path)
         #self.loadBodyTextures(self.split)

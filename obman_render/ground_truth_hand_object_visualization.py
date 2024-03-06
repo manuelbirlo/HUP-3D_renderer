@@ -5,12 +5,6 @@ import trimesh
 
 class GroundTruthVisualization:
 
-    def __init__(self, blender_scene, folder_rgb, folder_rgb_hand_with_skeleton):
-        self.blender_scene = blender_scene,
-        self.folder_rgb = folder_rgb,
-        self.folder_rgb_hand_with_skeleton = folder_rgb_hand_with_skeleton
-
-    
     def visualize_joints_2d(
         self,
         ax,
@@ -183,7 +177,7 @@ class GroundTruthVisualization:
         cam_calib = metainfo['cam_calib']
         obj_path = metainfo['obj_path']
         cam_extr = metainfo['cam_extr']
-
+        print("____________cam_calib {}".format(cam_calib))
         #object_verts_2d = self.get_objverts2d(cam_calib, obj_path, cam_extr, affine_transform)
         object_corners_2d = self.get_objcorners2d(cam_calib, obj_path, cam_extr, affine_transform)
 
