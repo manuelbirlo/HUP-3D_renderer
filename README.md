@@ -1,7 +1,7 @@
 # HUP-3D: Rendering of 3D multi-view synthetic images for assisted-egocentric hand-ultrasound pose estimation
 
 - [Project page](http://medicalaugmentedreality.org/handobject.html) <!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
-- [Synthetic Grasp Generation](https://github.com/jonashein/grasp_generator](https://github.com/BatFaceWayne/POV_Surgery)
+- [Synthetic Grasp Generation](https://github.com/BatFaceWayne/POV_Surgery)
 - [Baseline repos](TBD)
 
 
