@@ -1,12 +1,9 @@
-# Towards Markerless Surgical Tool and Hand Pose Estimation: Synthetic Grasp Rendering
+# HUP-3D: Rendering of 3D multi-view synthetic images for assisted-egocentric hand-ultrasound pose estimation
 
 - [Project page](http://medicalaugmentedreality.org/handobject.html) <!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
-- [Synthetic Grasp Generation](https://github.com/jonashein/grasp_generator)
-- [Synthetic Grasp Rendering](https://github.com/jonashein/grasp_renderer)
-- [Real Dataset Generation](https://github.com/jonashein/handobject_dataset_creator)
-- [HandObjectNet Baseline](https://github.com/jonashein/handobjectnet_baseline)
-- [PVNet Baseline](https://github.com/jonashein/pvnet_baseline)
-- [Combined Model Baseline](https://github.com/jonashein/baseline_combination)
+- [Synthetic Grasp Generation](https://github.com/jonashein/grasp_generator](https://github.com/BatFaceWayne/POV_Surgery)
+- [Baseline repos](TBD)
+
 
 This grasp renderer is based on the [Obman dataset generation pipeline](https://github.com/hassony2/obman_render).
 The synthetic grasps needed for this renderer can be generated with the [Grasp Generator](https://github.com/jonashein/grasp_generator).
