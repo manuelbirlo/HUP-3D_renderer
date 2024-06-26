@@ -21,11 +21,11 @@ Our synthetic dataset is available on the [project page](http://medicalaugmented
 
 ## Setup
 
-### Download and install code
+### Clone repository (download the source code)
 
 ```sh
-git clone https://github.com/jonashein/grasp_renderer.git
-cd grasp_renderer
+git clone [https://github.com/jonashein/grasp_renderer.git](https://github.com/manuelbirlo/HUP-3D_renderer.git
+cd HUP-3D_renderer
 ```
 
 ### Download and install prerequisites
