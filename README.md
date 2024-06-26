@@ -43,15 +43,15 @@ blender-2.82a-linux64/2.82/python/bin/python3.7m get-pip.py
 blender-2.82a-linux64/2.82/python/bin/pip install -r requirements.txt
 ```
 
-#### Download [SURREAL](https://www.di.ens.fr/willow/research/surreal/data/) assets
+#### Download assets from [SURREAL (Synthetic hUmans foR REAL tasks)](https://www.di.ens.fr/willow/research/surreal/data/):
 
 - Go to SURREAL [dataset request page](https://www.di.ens.fr/willow/research/surreal/data/)
-- Create an account, and receive an email with a username and password for data download
+- Create an account, and receive an email with a username (= your email address) and password for data download
 - Download SURREAL data dependencies using the following commands
 
 ```sh
 cd assets/SURREAL
-sh download_smpl_data.sh ../ username password
+sh download_smpl_data.sh ../ your_username your_password
 cd ..
 ```
 
