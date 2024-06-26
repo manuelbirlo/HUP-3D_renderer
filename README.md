@@ -59,7 +59,7 @@ cd ..
 
 - Go to [SMPL website](http://smpl.is.tue.mpg.de/)
 - Create an account by clicking *Sign Up* and provide your information
-- Download and unzip `SMPL for Python users` (click on 'Download version 1.1.0 for Python 2.7 (female/male/neutral, 300 shape PCs)' if you want the neutral human gender model to be included or on 'Download version 1.0.0 for Python 2.7 (female/male. 10 shape PCs)' if you just want to use the male and female models), copy the content of the `models` folder (the .pkl files) to `assets/models`.  Note that all code and data from this download falls under the [SMPL license](http://smpl.is.tue.mpg.de/license_body).
+- Download and unzip `SMPL for Python users` (click on 'Download version <latest_version> for Python 2.7 (female/male/neutral, 300 shape PCs)' if you want the neutral human gender model to be included or on 'Download version <latest_version> for Python 2.7 (female/male. 10 shape PCs)' if you just want to use the male and female models), copy the content of the `models` folder (the .pkl files) to `assets/models`.  Note that all code and data from this download falls under the [SMPL license](http://smpl.is.tue.mpg.de/license_body).
 
 #### Download body+hand textures and grasp information
 
@@ -81,9 +81,9 @@ cd ../../
 grasp_renderer/
   assets/
     models/
-      SMPLH_female.pkl
-      basicModel_f_lbs_10_207_0_v1.0.2.fbx'
-      basicModel_m_lbs_10_207_0_v1.0.2.fbx'
+      basicModel_f_lbs_10_207_0_v1.1.0.pkl
+      basicModel_m_lbs_10_207_0_v1.1.0.pkl
+      basicmodel_neutral_lbs_10_207_0_v1.1.0.pkl (if you want the neutral model to be included, for future use for example)
       ...
 ```
 
