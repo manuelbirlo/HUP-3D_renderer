@@ -55,7 +55,7 @@ sh download_smpl_data.sh ../ your_username your_password
 cd ..
 ```
 
-#### Download [SMPL (A Skinned Multi-Person Linear Model)](http://smpl.is.tue.mpg.de/) model
+#### Download [SMPL (A Skinned Multi-Person Linear)](http://smpl.is.tue.mpg.de/) Model
 
 - Go to [SMPL website](http://smpl.is.tue.mpg.de/)
 - Create an account by clicking *Sign Up* and provide your information
