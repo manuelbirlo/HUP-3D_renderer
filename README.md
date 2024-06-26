@@ -91,8 +91,8 @@ grasp_renderer/
 - Go to [MANO website](http://mano.is.tue.mpg.de/)
 - Create an account by clicking *Sign Up* and provide your information
 - Download Models and Code (the downloaded file should have the format mano_v*_*.zip). Note that all code and data from this download falls under the [MANO license](http://mano.is.tue.mpg.de/license).
-- unzip the file mano_v*_*.zip: `unzip mano_v*_*.zip`
-- set environment variable: `export MANO_LOCATION=/path/to/mano_v*_*`
+- unzip the file mano_v*_*.zip: `unzip mano_v*_*.zip` and place the unzipped 'mano_v*_*' folder for example to your project's asset directory (for example /root/HUP-3D_renderer/assets if your cloned repo is located in /root/HUP-3D_renderer/)
+- set environment variable: `export MANO_LOCATION=/path/to/mano_v*_*` (for example  `export MANO_LOCATION=/root/HUP-3D_renderer/assets/mano_v1_2` if you've downloaded mano_v1_2 in the steps described above)
 
 #### Modify mano code to be Python3 compatible
 
