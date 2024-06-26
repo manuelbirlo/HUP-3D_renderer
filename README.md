@@ -83,7 +83,6 @@ grasp_renderer/
     models/
       basicModel_f_lbs_10_207_0_v1.1.0.pkl
       basicModel_m_lbs_10_207_0_v1.1.0.pkl
-      basicmodel_neutral_lbs_10_207_0_v1.1.0.pkl (if you want the neutral model to be included, for future use for example)
       ...
 ```
 
