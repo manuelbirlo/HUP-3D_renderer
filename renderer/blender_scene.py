@@ -12,7 +12,7 @@ if mano_path is None:
                      'Please follow the README.md instructions')
 sys.path.insert(0, os.path.join(mano_path, 'webuser'))
 
-from obman_render import mesh_manip, render, texturing, camutils, coordutils
+from renderer import mesh_manip, render, texturing, camutils, coordutils
 from serialization import load_model
 from smpl_handpca_wrapper import load_model as smplh_load_model
 from mathutils import Matrix

@@ -1,6 +1,6 @@
 import os
 
-from obman_render import getextures
+from renderer import getextures
 
 
 def get_all_lsun(folder='/sequoia/data2/gvarol/datasets/LSUN/data/img'):

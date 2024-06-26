@@ -7,7 +7,7 @@ import pickle
 import numpy as np
 from tqdm import tqdm
 
-from obman_render.grasps.splitutils import read_split
+from renderer.grasps.splitutils import read_split
 
 
 def get_inv_hand_pca(mano_path='assets/models/MANO_RIGHT.pkl'):
