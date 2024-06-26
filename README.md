@@ -84,6 +84,20 @@ grasp_renderer/
       basicModel_f_lbs_10_207_0_v1.1.0.pkl
       basicModel_m_lbs_10_207_0_v1.1.0.pkl
       ...
+   textures/
+      bodywithhands/
+        test/
+           1_male_grey_male_0396.jpg
+           3_female_grey_female_0691.jpg
+           ...
+        train/
+           3_female_grey_female_0222.jpg
+           3_female_grey_female_0630.jpg
+           ...
+        val/
+          1_female_grey_female_0585.jpg
+          1_female_grey_female_0696.jpg
+          ...
 ```
 
 #### Download [MANO](http://mano.is.tue.mpg.de/) model
