@@ -178,16 +178,21 @@ Our synthetic dataset is available on the [project page](http://medicalaugmented
 
 ## Render Grasps
 
-<!-- To generate synthetic samples using the provided [exemplary grasps](assets/grasps/drill_grasps.txt) and [drill model](https://drive.google.com/file/d/1j3V2CTVEVPzI3Ybh159dfLtRXaoTqa00/view?usp=sharing), run the following command: -->
-To create samples for custom 3D models, generated the required grasps with the [Grasp Generator](https://github.com/jonashein/grasp_generator) and adjust the paths in the arguments accordingly:
+Before rendering grasps, grasps should have been generated using the GrabNet_Pose_Generation rep (TBN: use actual repo link here)
+After grasps have been generated the resulting .mat files have to be copied into this repo, for example to the /assets/grasps folder. This repo provided six sample .mat files for easy testing (generate_1.mat, ..., generate_6.mat). 
+Then the grasp rendering pipeline that launches Blender and renders images using our camera sphere concept can be executed as follows:
+
 ```
-blender-2.82a-linux64/blender -noaudio -t 8 -P grasp_renderer.py -- '{"max_grasps_per_object": 300, "renderings_per_grasp": 50, "split": "train", "grasp_folder": "assets/grasps/", "backgrounds_path": "assets/backgrounds/", "results_root": "datasets/synthetic/"}'
+blender-2.82a-linux64/blender -noaudio -t 8 -P grasp_renderer.py -- '{"max_grasps_per_object": 2, "renderings_per_grasp": 1, "split": "train", "grasp_folder": "assets/grasps/", "backgrounds_path": "assets/backgrounds/", "results_root": "datasets/synthetic/", "use_grasps_from_mat_file": "True", "selected_grasps": {"generate_1.mat": [23,27]}}'
 ```
+In the example execution of grasp_renderer.py above two grasps of generate_1.mat are used: 23 and 27. We recommend to visually inspect all generated grasps in a sofware like MeshLab and note down the indices of grasps you would like to be rendered. Again, in this case we selected grasps with indices 23 and 27 of generate_1.mat. 
 
 ## Citations
 
 If you find this code useful for your research, please consider citing:
 
+ TBD: Get actual citation
+ 
 * the publication that this code was adapted for
 ```
 @article{hein2021towards,
