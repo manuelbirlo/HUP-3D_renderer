@@ -59,7 +59,7 @@ cd ..
 
 - Go to [SMPL website](http://smpl.is.tue.mpg.de/)
 - Create an account by clicking *Sign Up* and provide your information
-- Download and unzip `SMPL for Python users` (click on 'Download version 1.1.0 for Python 2.7 (female/male/neutral, 300 shape PCs)'), copy the `models` folder to `assets/models`. Note that all code and data from this download falls under the [SMPL license](http://smpl.is.tue.mpg.de/license_body).
+- Download and unzip `SMPL for Python users` (click on 'Download version 1.1.0 for Python 2.7 (female/male/neutral, 300 shape PCs)'), copy the content of the `models` folder (the .pkl files) to `assets/models`.  Note that all code and data from this download falls under the [SMPL license](http://smpl.is.tue.mpg.de/license_body).
 
 #### Download body+hand textures and grasp information
 
