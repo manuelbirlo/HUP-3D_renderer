@@ -1,6 +1,6 @@
 # HUP-3D: Rendering of 3D multi-view synthetic images for assisted-egocentric hand-ultrasound pose estimation
 
-<img src="assets/images/camera_sphere_rotation.gif" width="180" height="180" alt="Description"><img src="assets/images/Blender_arm_rotation.gif" width="180" height="180" alt="Description"><img src="assets/images/Blender_arm_rotation2.gif" width="180" height="180" alt="Description"><img src="assets/images/rendered_rgb_frames.gif" width="230" height="180" alt="Description">
+<img src="assets/images/camera_sphere_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation2.gif" width="190" height="190" alt="Description"><img src="assets/images/rendered_rgb_frames.gif" width="240" height="190" alt="Description">
 
 - [Project page](http://medicalaugmentedreality.org/handobject.html) <!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
 - [Synthetic Grasp Generation](https://github.com/BatFaceWayne/POV_Surgery)
