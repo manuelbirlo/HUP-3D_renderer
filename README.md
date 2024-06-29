@@ -6,9 +6,8 @@
 - [Synthetic Grasp Generation](https://github.com/BatFaceWayne/POV_Surgery)
 - [Baseline repos](TBD)
 
-
-This grasp renderer is based on the [Obman dataset generation pipeline](https://github.com/hassony2/obman_render).
-The synthetic grasps needed for this renderer can be generated with the [Grasp Generator](https://github.com/jonashein/grasp_generator).
+This synthetic grasp image renderer is based on the [grasp renderer for surgical tool and hand pose estimation](https://github.com/jonashein/grasp_renderer), which in turn is based on the [ObMan dataset generation pipeline](https://github.com/hassony2/obman_render) that generates synthetic images of hands grasping everyday objects.
+The synthetic grasps needed for this renderer can be generated with the [US_GrabNet_grasp_generation](TODO:provide final link).
 
 Our synthetic dataset is available on the [project page](http://medicalaugmentedreality.org/handobject.html).
 
