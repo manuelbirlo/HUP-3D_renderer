@@ -17,10 +17,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 root = '.'
 sys.path.insert(0, root)
 
-from obman_render import (conditions, depthutils, imageutils, blender_scene, ground_truth_hand_object_visualization)
-from obman_render.grasps.grasputils import get_inv_hand_pca, grasp_wrong
-from obman_render.camera_view_sphere import camera_sphere
-from obman_render.grasp_data_conversion import mat_to_json_converter
+from renderer import (conditions, depthutils, imageutils, blender_scene, ground_truth_hand_object_visualization)
+from renderer.grasps.grasputils import get_inv_hand_pca, grasp_wrong
+from renderer.camera_view_sphere import camera_sphere
+from renderer.grasp_data_conversion import mat_to_json_converter
 
 class GraspRenderer:
 
