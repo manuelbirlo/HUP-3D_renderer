@@ -1,14 +1,13 @@
 # HUP-3D: Rendering of 3D multi-view synthetic images for assisted-egocentric hand-ultrasound pose estimation
 
-<img src="assets/images/camera_sphere_rotation.gif" width="300" height="300" alt="Description">
+<img src="assets/images/camera_sphere_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation2.gif" width="190" height="190" alt="Description"><img src="assets/images/rendered_rgb_frames.gif" width="240" height="190" alt="Description">
 
 - [Project page](http://medicalaugmentedreality.org/handobject.html) <!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
 - [Synthetic Grasp Generation](https://github.com/BatFaceWayne/POV_Surgery)
 - [Baseline repos](TBD)
 
-
-This grasp renderer is based on the [Obman dataset generation pipeline](https://github.com/hassony2/obman_render).
-The synthetic grasps needed for this renderer can be generated with the [Grasp Generator](https://github.com/jonashein/grasp_generator).
+This synthetic grasp image renderer is based on the [grasp renderer for surgical tool and hand pose estimation](https://github.com/jonashein/grasp_renderer), which in turn is based on the [ObMan dataset generation pipeline](https://github.com/hassony2/obman_render) that generates synthetic images of hands grasping everyday objects.
+The synthetic grasps needed for this renderer can be generated with the [US_GrabNet_grasp_generation](TODO:provide final link).
 
 Our synthetic dataset is available on the [project page](http://medicalaugmentedreality.org/handobject.html).
 
@@ -21,11 +20,11 @@ Our synthetic dataset is available on the [project page](http://medicalaugmented
 
 ## Setup
 
-### Download and install code
+### Clone repository (download the source code)
 
 ```sh
-git clone https://github.com/jonashein/grasp_renderer.git
-cd grasp_renderer
+git clone [https://github.com/jonashein/grasp_renderer.git](https://github.com/manuelbirlo/HUP-3D_renderer.git
+cd HUP-3D_renderer
 ```
 
 ### Download and install prerequisites
@@ -43,23 +42,23 @@ blender-2.82a-linux64/2.82/python/bin/python3.7m get-pip.py
 blender-2.82a-linux64/2.82/python/bin/pip install -r requirements.txt
 ```
 
-#### Download [SURREAL](https://www.di.ens.fr/willow/research/surreal/data/) assets
+#### Download assets from [SURREAL (Synthetic hUmans foR REAL tasks)](https://www.di.ens.fr/willow/research/surreal/data/):
 
 - Go to SURREAL [dataset request page](https://www.di.ens.fr/willow/research/surreal/data/)
-- Create an account, and receive an email with a username and password for data download
+- Create an account, and receive an email with a username (= your email address) and password for data download
 - Download SURREAL data dependencies using the following commands
 
 ```sh
 cd assets/SURREAL
-sh download_smpl_data.sh ../ username password
+sh download_smpl_data.sh ../ your_username your_password
 cd ..
 ```
 
-#### Download [SMPL](http://smpl.is.tue.mpg.de/) model
+#### Download [SMPL (A Skinned Multi-Person Linear)](http://smpl.is.tue.mpg.de/) Model
 
 - Go to [SMPL website](http://smpl.is.tue.mpg.de/)
 - Create an account by clicking *Sign Up* and provide your information
-- Download and unzip `SMPL for Python users`, copy the `models` folder to `assets/models`. Note that all code and data from this download falls under the [SMPL license](http://smpl.is.tue.mpg.de/license_body).
+- Download and unzip `SMPL for Python users` (click on 'Download version <latest_version> for Python 2.7 (female/male/neutral, 300 shape PCs)' if you want the neutral human gender model to be included or on 'Download version <latest_version> for Python 2.7 (female/male. 10 shape PCs)' if you just want to use the male and female models), copy the content of the `models` folder (the .pkl files) to `assets/models`.  Note that all code and data from this download falls under the [SMPL license](http://smpl.is.tue.mpg.de/license_body). Please note: The current available downloads under 'SMPKL for Python users' don't contain two .fbx files that are required, they only contain .pkl files. Therefore, in order to allow a smooth installation process of this repo and still respect the SMPL licence, please download the .fbx file here AFTER you created a SMOL acount and accepted the SMPL licence: [link to .fbx files](https://drive.google.com/file/d/1NIGOLLJ8apfAMUY5ThS8xYCzFO3I72Ms/view?usp=sharing) 
 
 #### Download body+hand textures and grasp information
 
@@ -81,10 +80,25 @@ cd ../../
 grasp_renderer/
   assets/
     models/
-      SMPLH_female.pkl
-      basicModel_f_lbs_10_207_0_v1.0.2.fbx'
-      basicModel_m_lbs_10_207_0_v1.0.2.fbx'
+      basicModel_f_lbs_10_207_0_v1.0.2.fbx
+      basicModel_m_lbs_10_207_0_v1.0.2
+      basicModel_f_lbs_10_207_0_v1.1.0.pkl
+      basicModel_m_lbs_10_207_0_v1.1.0.pkl
       ...
+   textures/
+      bodywithhands/
+        test/
+           1_male_grey_male_0396.jpg
+           3_female_grey_female_0691.jpg
+           ...
+        train/
+           3_female_grey_female_0222.jpg
+           3_female_grey_female_0630.jpg
+           ...
+        val/
+          1_female_grey_female_0585.jpg
+          1_female_grey_female_0696.jpg
+          ...
 ```
 
 #### Download [MANO](http://mano.is.tue.mpg.de/) model
@@ -92,8 +106,8 @@ grasp_renderer/
 - Go to [MANO website](http://mano.is.tue.mpg.de/)
 - Create an account by clicking *Sign Up* and provide your information
 - Download Models and Code (the downloaded file should have the format mano_v*_*.zip). Note that all code and data from this download falls under the [MANO license](http://mano.is.tue.mpg.de/license).
-- unzip the file mano_v*_*.zip: `unzip mano_v*_*.zip`
-- set environment variable: `export MANO_LOCATION=/path/to/mano_v*_*`
+- unzip the file mano_v*_*.zip: `unzip mano_v*_*.zip` and place the unzipped 'mano_v*_*' folder for example to your project's asset directory (for example /root/HUP-3D_renderer/assets if your cloned repo is located in /root/HUP-3D_renderer/)
+- set environment variable: `export MANO_LOCATION=/path/to/mano_v*_*` (for example  `export MANO_LOCATION=/root/HUP-3D_renderer/assets/mano_v1_2` if you've downloaded mano_v1_2 in the steps described above)
 
 #### Modify mano code to be Python3 compatible
 
@@ -165,16 +179,21 @@ Our synthetic dataset is available on the [project page](http://medicalaugmented
 
 ## Render Grasps
 
-<!-- To generate synthetic samples using the provided [exemplary grasps](assets/grasps/drill_grasps.txt) and [drill model](https://drive.google.com/file/d/1j3V2CTVEVPzI3Ybh159dfLtRXaoTqa00/view?usp=sharing), run the following command: -->
-To create samples for custom 3D models, generated the required grasps with the [Grasp Generator](https://github.com/jonashein/grasp_generator) and adjust the paths in the arguments accordingly:
+Before rendering grasps, grasps should have been generated using the GrabNet_Pose_Generation rep (TBN: use actual repo link here)
+After grasps have been generated the resulting .mat files have to be copied into this repo, for example to the /assets/grasps folder. This repo provided six sample .mat files for easy testing (generate_1.mat, ..., generate_6.mat). 
+Then the grasp rendering pipeline that launches Blender and renders images using our camera sphere concept can be executed as follows:
+
 ```
-blender-2.82a-linux64/blender -noaudio -t 8 -P grasp_renderer.py -- '{"max_grasps_per_object": 300, "renderings_per_grasp": 50, "split": "train", "grasp_folder": "assets/grasps/", "backgrounds_path": "assets/backgrounds/", "results_root": "datasets/synthetic/"}'
+blender-2.82a-linux64/blender -noaudio -t 8 -P grasp_renderer.py -- '{"max_grasps_per_object": 2, "renderings_per_grasp": 1, "split": "train", "grasp_folder": "assets/grasps/", "backgrounds_path": "assets/backgrounds/", "results_root": "datasets/synthetic/", "use_grasps_from_mat_file": "True", "selected_grasps": {"generate_1.mat": [23,27]}}'
 ```
+In the example execution of grasp_renderer.py above two grasps of generate_1.mat are used: 23 and 27. We recommend to visually inspect all generated grasps in a sofware like MeshLab and note down the indices of grasps you would like to be rendered. Again, in this case we selected grasps with indices 23 and 27 of generate_1.mat. 
 
 ## Citations
 
 If you find this code useful for your research, please consider citing:
 
+ TBD: Get actual citation
+ 
 * the publication that this code was adapted for
 ```
 @article{hein2021towards,
