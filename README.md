@@ -20,6 +20,12 @@ Our synthetic dataset is available on the [project page](http://medicalaugmented
 
 ## Setup
 
+### Optional: Use a Docker container
+
+This repo is laid out for a Linux-based operating system. However, if you would like to use this repo with your Windows machine, a Docker containe is a suitable solution. Please follows our instructions here: [Docker container setup](./Docker/README.md)
+Please note: It is also possible to use a Docker container on Mac, but we have not tested this repo on a Mac system with an Apple Silicon chip. We are only referring to the grab generation part of the forked POV-Surgery repo, which generates grab images using GrabNet, but the entire POV-Surgery pipeline renders grab images using Blender.
+Newer Apple computers using the Silicon chip may be incompatible with Blender's OpenGL-related functionality.
+
 ### Clone repository (download the source code)
 
 ```sh
