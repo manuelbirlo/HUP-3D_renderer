@@ -2,7 +2,7 @@
 
 <img src="assets/images/camera_sphere_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation2.gif" width="190" height="190" alt="Description"><img src="assets/images/rendered_rgb_frames.gif" width="240" height="190" alt="Description">
 
-- [Project page](http://medicalaugmentedreality.org/handobject.html) <!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
+- [Project page](https://manuelbirlo.github.io/HUP-3D/) 
 - [Synthetic Grasp Generation](https://github.com/BatFaceWayne/POV_Surgery)
 - [Baseline repos](TBD)
 
