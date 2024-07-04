@@ -2,7 +2,7 @@
 
 <img src="assets/images/camera_sphere_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation2.gif" width="190" height="190" alt="Description"><img src="assets/images/rendered_rgb_frames.gif" width="240" height="190" alt="Description">
 
-- [Project page](http://medicalaugmentedreality.org/handobject.html) <!-- - [Paper](http://arxiv.org/abs/2004.13449) -->
+- [Project page](https://manuelbirlo.github.io/HUP-3D/) 
 - [Synthetic Grasp Generation](https://github.com/BatFaceWayne/POV_Surgery)
 - [Baseline repos](TBD)
 
@@ -19,6 +19,12 @@ Our synthetic dataset is available on the [project page](http://medicalaugmented
 - [Citations](#citations)
 
 ## Setup
+
+### Optional: Use a Docker container
+
+This repo is laid out for a Linux-based operating system. However, if you would like to use this repo with your Windows machine, a Docker containe is a suitable solution. Please follows our instructions here: [Docker container setup](./Docker/README.md)
+Please note: It is also possible to use a Docker container on Mac, but we have not tested this repo on a Mac system with an Apple Silicon chip. We are only referring to the grab generation part of the forked POV-Surgery repo, which generates grab images using GrabNet, but the entire POV-Surgery pipeline renders grab images using Blender.
+Newer Apple computers using the Silicon chip may be incompatible with Blender's OpenGL-related functionality.
 
 ### Clone repository (download the source code)
 
