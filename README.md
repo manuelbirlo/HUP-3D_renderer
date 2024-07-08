@@ -196,7 +196,7 @@ In the example execution of grasp_renderer.py above two grasps of generate_1.mat
 
 ## Baseline Evaluation of Rendered Images
 
-We have empployed a state-of-the-art deep learning (DL) model designed for other datasets like (HO-3D)[https://github.com/shreyashampali/ho3d] which has been adopted for our HO-3D dataset and can be found here: (HUP-3D-model)[https://github.com/razvancaramalau/HUP-3D-model]
+We have employed a state-of-the-art deep learning (DL) model designed for other datasets like (HO-3D)[https://github.com/shreyashampali/ho3d] which has been adopted for our HO-3D dataset and can be found here: (HUP-3D-model)[https://github.com/razvancaramalau/HUP-3D-model]
 
 ## Citations
 
