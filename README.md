@@ -194,6 +194,10 @@ blender-2.82a-linux64/blender -noaudio -t 8 -P grasp_renderer.py -- '{"max_grasp
 ```
 In the example execution of grasp_renderer.py above two grasps of generate_1.mat are used: 23 and 27. We recommend to visually inspect all generated grasps in a sofware like MeshLab and note down the indices of grasps you would like to be rendered. Again, in this case we selected grasps with indices 23 and 27 of generate_1.mat. 
 
+## Baseline Evaluation of Rendered Images
+
+We have empployed a state-of-the-art deep learning (DL) model designed for other datasets like (HO-3D)[https://github.com/shreyashampali/ho3d] which has been adopted for our HO-3D dataset and can be found here: (HUP-3D-model)[https://github.com/razvancaramalau/HUP-3D-model]
+
 ## Citations
 
 If you find this code useful for your research, please consider citing:
