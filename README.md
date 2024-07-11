@@ -2,6 +2,8 @@
 
 <img src="assets/images/camera_sphere_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation.gif" width="190" height="190" alt="Description"><img src="assets/images/Blender_arm_rotation2.gif" width="190" height="190" alt="Description"><img src="assets/images/rendered_rgb_frames.gif" width="240" height="190" alt="Description">
 
+<img src="assets/images/arm_rotation_rgb_depth_segm.gif" width="810" height="300" alt="Description">
+
 - [Project page](https://manuelbirlo.github.io/HUP-3D/) 
 - [Synthetic Grasp Generation](https://github.com/BatFaceWayne/POV_Surgery)
 - [Baseline repos](TBD)
