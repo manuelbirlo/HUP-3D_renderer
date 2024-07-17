@@ -11,7 +11,7 @@
 This synthetic grasp image renderer is based on the [grasp renderer for surgical tool and hand pose estimation](https://github.com/jonashein/grasp_renderer), which in turn is based on the [ObMan dataset generation pipeline](https://github.com/hassony2/obman_render) that generates synthetic images of hands grasping everyday objects.
 The synthetic grasps needed for this renderer can be generated with the [US_GrabNet_grasp_generation](TODO:provide final link).
 
-Our synthetic dataset is available on the [project page](http://medicalaugmentedreality.org/handobject.html).
+Our synthetic dataset is available here: [HUP-3D dataset](https://drive.google.com/file/d/1_MDn7AaansvGdU_wd_eiFO4n95R-Ri9L/view?usp=sharing)
 
 ## Table of Content
 
