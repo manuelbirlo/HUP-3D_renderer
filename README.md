@@ -4,9 +4,9 @@
 
 <img src="assets/images/arm_rotation_rgb_depth_segm.gif" width="810" height="300" alt="Description">
 
-- [Project page](https://manuelbirlo.github.io/HUP-3D/) 
-- [Synthetic Grasp Generation](https://github.com/BatFaceWayne/POV_Surgery)
-- [Baseline repos](TBD)
+- [Project page will be available soon]
+- [Grasp Generation via a Generative Model](https://github.com/manuelbirlo/US_GrabNet_grasp_generation)
+- [Training and Evaluation of 3D Pose Estimation for US Probe](https://github.com/razvancaramalau/HUP-3D-model)
 
 This synthetic grasp image renderer is based on the [grasp renderer for surgical tool and hand pose estimation](https://github.com/jonashein/grasp_renderer), which in turn is based on the [ObMan dataset generation pipeline](https://github.com/hassony2/obman_render) that generates synthetic images of hands grasping everyday objects.
 The synthetic grasps needed for this renderer can be generated with the [US_GrabNet_grasp_generation](TODO:provide final link).
