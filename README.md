@@ -177,17 +177,13 @@ At the time of writing the instructions mano version is 1.2 so use
 
 
 
-## Demo
-<!-- We provide [exemplary grasps](assets/grasps/drill_grasps.txt) for the 3D drill model used in our synthetic and real datasets. -->
-COMING SOON.
+##HUP-3D Dataset
 
-The 3D drill model can be downloaded [here](https://drive.google.com/file/d/1j3V2CTVEVPzI3Ybh159dfLtRXaoTqa00/view?usp=sharing).
-
-Our synthetic dataset is available on the [project page](http://medicalaugmentedreality.org/handobject.html).
+Our HUP-3D synthetic dataset is available on the [HUP-3D project page]([http://medicalaugmentedreality.org/handobject.html](https://manuelbirlo.github.io/HUP-3D/)).
 
 ## Render Grasps
 
-Before rendering grasps, grasps should have been generated using the GrabNet_Pose_Generation rep (TBN: use actual repo link here)
+Before rendering grasps, grasps should have been generated using the [US_GrabNet_grasp_generation](https://github.com/manuelbirlo/US_GrabNet_grasp_generation) repo.
 After grasps have been generated the resulting .mat files have to be copied into this repo, for example to the /assets/grasps folder. This repo provided six sample .mat files for easy testing (generate_1.mat, ..., generate_6.mat). 
 Then the grasp rendering pipeline that launches Blender and renders images using our camera sphere concept can be executed as follows:
 
@@ -208,6 +204,11 @@ If you find this code useful for your research, please consider citing:
  
 * the publication that this code was adapted for
 ```
+To be done: So far only the ArXiv pre-print is available...
+```
+
+* Our publication uses core concepts incl. the Python code base of the following publication:
+```
 @article{hein2021towards,
   title={Towards markerless surgical tool and hand pose estimation},
   author={Hein, Jonas and Seibold, Matthias and Bogo, Federica and Farshad, Mazda and Pollefeys, Marc and F{\"u}rnstahl, Philipp and Navab, Nassir},
@@ -217,15 +218,5 @@ If you find this code useful for your research, please consider citing:
   pages={799--808},
   year={2021},
   publisher={Springer}
-}
-```
-
-* the publication it builds upon and that this code was originally developed for
-```
-@inproceedings{hasson19_obman,
-  title     = {Learning joint reconstruction of hands and manipulated objects},
-  author    = {Hasson, Yana and Varol, G{\"u}l and Tzionas, Dimitris and Kalevatykh, Igor and Black, Michael J. and Laptev, Ivan and Schmid, Cordelia},
-  booktitle = {CVPR},
-  year      = {2019}
 }
 ```
