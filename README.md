@@ -198,7 +198,7 @@ We have employed a state-of-the-art deep learning (DL) model designed for other 
 
 ## Citations
 
-If you find this code useful for your research, please consider citing:
+If you find this code useful for your research, please consider citing our MICCAI 2024 paper:
 
 ```
 @InProceedings{Bir_HUP3D_MICCAI2024,
