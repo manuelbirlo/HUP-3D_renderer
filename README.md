@@ -200,11 +200,17 @@ We have employed a state-of-the-art deep learning (DL) model designed for other 
 
 If you find this code useful for your research, please consider citing:
 
- TBD: Get actual citation
- 
-* the publication that this code was adapted for
 ```
-To be done: So far only the ArXiv pre-print is available...
+@InProceedings{Bir_HUP3D_MICCAI2024,
+        author = { Birlo, Manuel and Caramalau, Razvan and Edwards, Philip J. “Eddie” and Dromey, Brian and Clarkson, Matthew J. and Stoyanov, Danail},
+        title = { { HUP-3D: A 3D multi-view synthetic dataset for assisted-egocentric hand-ultrasound-probe pose estimation } },
+        booktitle = {proceedings of Medical Image Computing and Computer Assisted Intervention -- MICCAI 2024},
+        year = {2024},
+        publisher = {Springer Nature Switzerland},
+        volume = {LNCS 15001},
+        month = {October},
+        page = {430 -- 436}
+}
 ```
 
 * Our publication uses core concepts incl. the Python code base of the following publication:
